@@ -30,12 +30,8 @@ export function StickyBuyBar({
 
   useEffect(() => {
     const handleScroll = () => {
-      // Show when user has scrolled down > 400px
-      if (window.scrollY > 420) {
-        setVisible(true);
-      } else {
-        setVisible(false);
-      }
+      if (window.scrollY > 500) setVisible(true);
+      else setVisible(false);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -47,17 +43,14 @@ export function StickyBuyBar({
 
   const handleAction = (buyNow: boolean) => {
     if (product.hasOptions) {
-      // If product has options, scroll up to options selector smoothly
       window.scrollTo({ top: 200, behavior: "smooth" });
       addToast("Please choose your options", "info");
       return;
     }
-
     const fd = new FormData();
     fd.set("productId", product.id);
     fd.set("qty", "1");
     if (buyNow) fd.set("buyNow", "1");
-
     startTransition(async () => {
       const res = await addToCart(fd);
       if (res && res.ok) {
@@ -71,42 +64,25 @@ export function StickyBuyBar({
   };
 
   return (
-    <div className="md:hidden fixed bottom-14 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t border-gray-200 px-4 py-2.5 shadow-xl fade-up">
-      <div className="flex items-center gap-3">
-        <div className="relative h-11 w-11 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-100">
-          {product.images[0] ? (
-            <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
-          ) : null}
+    <div className="xl:hidden fixed bottom-[68px] md:bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-8px_24px_rgba(0,0,0,0.12)]">
+      <div className="container-x px-3 sm:px-4 py-2.5 flex items-center gap-3">
+        <div className="h-12 w-12 rounded-xl bg-[#f8f9fb] overflow-hidden border shrink-0 hidden sm:block">
+          {product.images[0] && <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />}
         </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="text-xs font-medium text-gray-900 truncate">{product.name}</div>
-          <div className="font-semibold text-xs text-gray-900 mt-0.5">
-            {formatMoney(product.price, currency)}
-          </div>
+        <div className="flex-1 min-w-0 hidden sm:block">
+          <div className="text-xs font-bold truncate">{product.name}</div>
+          <div className="font-bold text-sm">{formatMoney(product.price, currency)}</div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled={pending || isSoldOut}
-            onClick={() => handleAction(false)}
-            className="btn-outline text-xs px-3 py-2 shrink-0 flex items-center gap-1 border-gray-900 text-gray-900"
-          >
-            <ShoppingBag className="h-3.5 w-3.5" />
-            <span className="hidden xs:inline">Add</span>
+        <div className="flex items-center gap-2 flex-1 sm:flex-none">
+          <button disabled={pending || isSoldOut} onClick={() => handleAction(false)} className="flex-1 sm:flex-none bg-white border border-gray-900 text-gray-900 font-bold text-sm px-4 py-3 rounded-full flex items-center justify-center gap-1.5 hover:bg-gray-50 transition">
+            <ShoppingBag className="h-4 w-4" /> Add to cart
           </button>
-          <button
-            type="button"
-            disabled={pending || isSoldOut}
-            onClick={() => handleAction(true)}
-            className="btn-accent text-xs px-3.5 py-2 shrink-0 flex items-center gap-1 font-semibold"
-          >
-            <Zap className="h-3.5 w-3.5 fill-current" />
-            Buy Now
+          <button disabled={pending || isSoldOut} onClick={() => handleAction(true)} className="flex-1 sm:flex-none bg-[#ff6b00] text-white font-bold text-sm px-5 py-3 rounded-full flex items-center justify-center gap-1.5 hover:bg-[#e65f00] transition shadow-sm">
+            <Zap className="h-4 w-4 fill-white" /> Buy now
           </button>
         </div>
       </div>
+      <div className="h-[env(safe-area-inset-bottom)] bg-white md:hidden" />
     </div>
   );
 }

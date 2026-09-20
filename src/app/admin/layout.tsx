@@ -24,9 +24,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const pendingReviews = db.select({ n: sql<number>`count(*)` }).from(schema.reviews).where(eq(schema.reviews.approved, false)).get()?.n ?? 0;
   return (
     <ToastProvider>
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-[#f8f9fb]">
         <Sidebar storeName={set.storeName} pendingOrders={pendingOrders} pendingReviews={pendingReviews} />
-        <main className="flex-1 min-w-0 p-6 lg:p-8">{children}</main>
+        <main className="flex-1 min-w-0 p-4 lg:p-8 pb-20 lg:pb-8 pt-[72px] lg:pt-8">{children}</main>
       </div>
     </ToastProvider>
   );
