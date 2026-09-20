@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Expand, X, ZoomIn, ZoomOut } from "lucide-react";
 
 export function Gallery({ images, name, variantImage }: { images: string[]; name: string; variantImage?: string | null }) {
@@ -124,6 +125,116 @@ export function Gallery({ images, name, variantImage }: { images: string[]; name
 
   if (!allImages.length) return <div className="aspect-square rounded-xl bg-[#f1f2f4] border border-[#e0e0e0]" />;
 
+  /**
+   * Full-screen lightbox.
+   *
+   * IMPORTANT: this is rendered through a React portal into <body>, NOT inline.
+   * The gallery lives inside a `lg:sticky` wrapper on the product page, and
+   * `position: sticky` creates its own stacking context. Rendered inline, the
+   * lightbox's z-index would be trapped inside that context, so the *other*
+   * sticky cards on the page (variant/price buy box, "Need help?", review form),
+   * the sticky header and the fixed WhatsApp / buy-bar buttons all painted on
+   * top of the full-screen zoom. Portaling to <body> puts the overlay in the
+   * root stacking context so it truly covers the whole page.
+   */
+  const lightboxNode = lightbox ? (
+    <div className="fixed inset-0 z-[200] bg-black flex flex-col select-none isolate" role="dialog" aria-modal="true" aria-label={`${name} full-screen gallery`}>
+      {/* Header - fixed height, no overlap */}
+      <div className="flex items-center justify-between p-3 sm:p-4 text-white bg-black border-b border-white/10 shrink-0 z-30">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold">{active + 1}</span>
+          </div>
+          <span className="text-sm font-medium truncate max-w-[200px] sm:max-w-[400px]">{name}</span>
+          <span className="text-xs text-white/60 hidden sm:inline">{active + 1} of {allImages.length}</span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button onClick={toggleZoom} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition" title={lbScale > 1 ? "Zoom out" : "Zoom in"}>
+            {lbScale > 1 ? <ZoomOut className="h-5 w-5" /> : <ZoomIn className="h-5 w-5" />}
+          </button>
+          <button onClick={() => setLightbox(false)} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition" aria-label="Close full-screen view">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Main image area - isolated, no overlapping with header/footer */}
+      <div
+        ref={lbContainerRef}
+        className="flex-1 relative flex items-center justify-center overflow-hidden bg-black touch-none"
+        onMouseDown={handleLbMouseDown}
+        onMouseMove={handleLbMouseMove}
+        onMouseUp={handleLbMouseUp}
+        onMouseLeave={handleLbMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onWheel={handleWheel}
+        style={{ cursor: lbScale > 1 ? (isDragging ? "grabbing" : "grab") : "zoom-in" }}
+      >
+        <img
+          ref={lbImgRef}
+          src={allImages[active]}
+          alt={name}
+          className="max-h-full max-w-full object-contain select-none will-change-transform"
+          style={{
+            transform: `translate(${lbPan.x}px, ${lbPan.y}px) scale(${lbScale})`,
+            transition: isDragging || pinchStart ? "none" : "transform 0.2s ease-out",
+          }}
+          onDoubleClick={toggleZoom}
+          draggable={false}
+        />
+
+        {/* Navigation - above image, not overlapping content */}
+        {allImages.length > 1 && lbScale === 1 && (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); prev(); }}
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/10 backdrop-blur hover:bg-white/20 text-white flex items-center justify-center transition z-20"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); next(); }}
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/10 backdrop-blur hover:bg-white/20 text-white flex items-center justify-center transition z-20"
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          </>
+        )}
+
+        {/* Zoom indicator */}
+        {lbScale > 1 && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur text-white text-xs px-3 py-1 rounded-full border border-white/10 z-20">
+            {Math.round(lbScale * 100)}% • Drag to pan • Pinch to zoom
+          </div>
+        )}
+      </div>
+
+      {/* Thumbnails - fixed, not overlapping */}
+      <div className="shrink-0 bg-black border-t border-white/10 z-30">
+        <div className="p-3 sm:p-4">
+          <div className="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar">
+            {allImages.map((src, i) => (
+              <button
+                key={i}
+                onClick={() => { setActive(i); setLbScale(1); setLbPan({ x: 0, y: 0 }); }}
+                className={`relative h-14 w-14 sm:h-16 sm:w-16 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${i === active ? "border-white scale-105" : "border-white/20 opacity-60 hover:opacity-100"}`}
+              >
+                <img src={src} alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="text-center text-[11px] text-white/50 pb-3 hidden sm:block">
+          Use arrow keys • ESC to close • Scroll to zoom • Drag to pan • Double-click to zoom • Pinch on mobile
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <>
       <div className="flex flex-col-reverse lg:flex-row gap-3">
@@ -219,102 +330,10 @@ export function Gallery({ images, name, variantImage }: { images: string[]; name
         </div>
       </div>
 
-      {/* Full-screen Lightbox - Fixed overlapping & with drag/pinch zoom */}
-      {lightbox && (
-        <div className="fixed inset-0 z-[100] bg-black flex flex-col select-none">
-          {/* Header - fixed height, no overlap */}
-          <div className="flex items-center justify-between p-3 sm:p-4 text-white bg-black border-b border-white/10 shrink-0 z-30">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                <span className="text-xs font-bold">{active + 1}</span>
-              </div>
-              <span className="text-sm font-medium truncate max-w-[200px] sm:max-w-[400px]">{name}</span>
-              <span className="text-xs text-white/60 hidden sm:inline">{active + 1} of {allImages.length}</span>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button onClick={toggleZoom} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition" title={lbScale > 1 ? "Zoom out" : "Zoom in"}>
-                {lbScale > 1 ? <ZoomOut className="h-5 w-5" /> : <ZoomIn className="h-5 w-5" />}
-              </button>
-              <button onClick={() => setLightbox(false)} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Main image area - isolated, no overlapping with header/footer */}
-          <div
-            ref={lbContainerRef}
-            className="flex-1 relative flex items-center justify-center overflow-hidden bg-black touch-none"
-            onMouseDown={handleLbMouseDown}
-            onMouseMove={handleLbMouseMove}
-            onMouseUp={handleLbMouseUp}
-            onMouseLeave={handleLbMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onWheel={handleWheel}
-            style={{ cursor: lbScale > 1 ? (isDragging ? "grabbing" : "grab") : "zoom-in" }}
-          >
-            <img
-              ref={lbImgRef}
-              src={allImages[active]}
-              alt={name}
-              className="max-h-full max-w-full object-contain select-none will-change-transform"
-              style={{
-                transform: `translate(${lbPan.x}px, ${lbPan.y}px) scale(${lbScale})`,
-                transition: isDragging || pinchStart ? "none" : "transform 0.2s ease-out",
-              }}
-              onDoubleClick={toggleZoom}
-              draggable={false}
-            />
-
-            {/* Navigation - above image, not overlapping content */}
-            {allImages.length > 1 && lbScale === 1 && (
-              <>
-                <button
-                  onClick={(e) => { e.stopPropagation(); prev(); }}
-                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/10 backdrop-blur hover:bg-white/20 text-white flex items-center justify-center transition z-20"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); next(); }}
-                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/10 backdrop-blur hover:bg-white/20 text-white flex items-center justify-center transition z-20"
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </button>
-              </>
-            )}
-
-            {/* Zoom indicator */}
-            {lbScale > 1 && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur text-white text-xs px-3 py-1 rounded-full border border-white/10 z-20">
-                {Math.round(lbScale * 100)}% • Drag to pan • Pinch to zoom
-              </div>
-            )}
-          </div>
-
-          {/* Thumbnails - fixed, not overlapping */}
-          <div className="shrink-0 bg-black border-t border-white/10 z-30">
-            <div className="p-3 sm:p-4">
-              <div className="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar">
-                {allImages.map((src, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { setActive(i); setLbScale(1); setLbPan({ x: 0, y: 0 }); }}
-                    className={`relative h-14 w-14 sm:h-16 sm:w-16 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${i === active ? "border-white scale-105" : "border-white/20 opacity-60 hover:opacity-100"}`}
-                  >
-                    <img src={src} alt="" className="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="text-center text-[11px] text-white/50 pb-3 hidden sm:block">
-              Use arrow keys • ESC to close • Scroll to zoom • Drag to pan • Double-click to zoom • Pinch on mobile
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Full-screen lightbox — portaled to <body> so it escapes the sticky
+          gallery wrapper's stacking context and covers the variant/price
+          buy box, "Need help?" card, header and floating buttons. */}
+      {lightboxNode && typeof document !== "undefined" ? createPortal(lightboxNode, document.body) : null}
     </>
   );
 }
