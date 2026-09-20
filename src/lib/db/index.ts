@@ -21,5 +21,6 @@ function create() {
 }
 
 export const db = globalThis.__db ?? create();
+if (!globalThis.__db) setTimeout(() => import("@/lib/plugins/firestore").then((m) => m.scheduleAutoSync()).catch(() => {}), 2000);
 if (process.env.NODE_ENV !== "production") globalThis.__db = db;
 export { schema };

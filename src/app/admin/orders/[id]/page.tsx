@@ -8,6 +8,8 @@ import { OrderActions } from "@/components/admin/OrderActions";
 import { ArrowLeft, Printer } from "lucide-react";
 import { db, schema } from "@/lib/db";
 import { eq, sql } from "drizzle-orm";
+import { isEnabled } from "@/lib/plugins/store";
+import { ShiprocketPanel } from "@/components/admin/ShiprocketPanel";
 
 export default async function AdminOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const data = getOrder((await params).id);
@@ -39,6 +41,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
               <div className="flex justify-between font-semibold text-base pt-2 border-t"><span>Total</span><span>{formatMoney(o.total, s.currency)}</span></div>
             </div>
           </div>
+          {isEnabled("shiprocket") && <ShiprocketPanel order={o} />}
           <OrderActions order={o} />
           <div className="card p-5">
             <h2 className="font-semibold mb-3">Timeline</h2>

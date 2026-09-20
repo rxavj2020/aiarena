@@ -25,7 +25,7 @@ export function savePlugin(id: string, patch: { enabled?: boolean; config?: Reco
   const current = getPluginState(id);
   const next = { enabled: patch.enabled ?? current.enabled, config: { ...current.config, ...(patch.config ?? {}) } };
   // Empty password fields mean "keep existing"
-  for (const f of def.fields) if (f.type === "password" && patch.config && patch.config[f.key] === "") next.config[f.key] = current.config[f.key] ?? "";
+  for (const f of def.fields) if ((f.type === "password" || f.key === "privateKey") && patch.config && patch.config[f.key] === "") next.config[f.key] = current.config[f.key] ?? "";
   if (next.enabled) {
     const missing = def.fields.filter((f) => f.required && !next.config[f.key]);
     if (missing.length) throw new Error(`Missing required fields: ${missing.map((m) => m.label).join(", ")}`);

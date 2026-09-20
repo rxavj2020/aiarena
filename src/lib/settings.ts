@@ -105,5 +105,6 @@ export function saveSettings(patch: Partial<StoreSettings>) {
     .values({ key: "store", value: next })
     .onConflictDoUpdate({ target: schema.settings.key, set: { value: next } })
     .run();
+  import("@/lib/plugins/firestore").then((m) => m.mirrorRow("settings", "store")).catch(() => {});
   return next;
 }

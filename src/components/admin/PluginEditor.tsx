@@ -20,7 +20,7 @@ export function PluginEditor({ def, enabled, config, hasSecret, lastTest, siteUr
   });
   const test = async () => { setTesting(true); const r = await testPlugin(def.id, c); setTesting(false); notify(toast, r); router.refresh(); };
   const copy = (t: string) => { navigator.clipboard.writeText(t); toast("Copied"); };
-  const webhook = def.id === "razorpay" ? `${siteUrl}/api/webhooks/razorpay` : def.id === "cashfree" ? `${siteUrl}/api/webhooks/cashfree` : null;
+  const webhook = def.id === "razorpay" ? `${siteUrl}/api/webhooks/razorpay` : def.id === "cashfree" ? `${siteUrl}/api/webhooks/cashfree` : def.id === "shiprocket" ? `${siteUrl}/api/webhooks/shiprocket` : null;
 
   return (
     <div className="grid lg:grid-cols-[1fr_380px] gap-6">
@@ -42,7 +42,7 @@ export function PluginEditor({ def, enabled, config, hasSecret, lastTest, siteUr
               <label className="label">{f.label}{f.required && <span className="text-red-500"> *</span>}</label>
               {f.type === "select" ? <select value={c[f.key] ?? f.options?.[0]} onChange={(e) => setC({ ...c, [f.key]: e.target.value })} className="input">{f.options?.map((o) => <option key={o} value={o}>{o}</option>)}</select>
                 : f.type === "toggle" ? <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={c[f.key] === "true"} onChange={(e) => setC({ ...c, [f.key]: String(e.target.checked) })} /> Yes</label>
-                : f.type === "textarea" ? <textarea value={c[f.key] ?? ""} onChange={(e) => setC({ ...c, [f.key]: e.target.value })} rows={3} className="input" />
+                : f.type === "textarea" ? <textarea value={c[f.key] ?? ""} onChange={(e) => setC({ ...c, [f.key]: e.target.value })} rows={f.key === "privateKey" ? 6 : 3} className="input font-mono text-xs" placeholder={f.key === "privateKey" && hasSecret[f.key] ? "•••••••• (saved — leave blank to keep)" : f.placeholder} />
                 : <input type={f.type === "password" ? "password" : "text"} value={c[f.key] ?? ""} onChange={(e) => setC({ ...c, [f.key]: e.target.value })} placeholder={f.type === "password" && hasSecret[f.key] ? "•••••••• (saved — leave blank to keep)" : f.placeholder} className="input font-mono text-sm" autoComplete="off" />}
               {f.help && <p className="text-xs text-gray-500 mt-1">{f.help}</p>}
             </div>
@@ -57,7 +57,7 @@ export function PluginEditor({ def, enabled, config, hasSecret, lastTest, siteUr
         {webhook && (
           <div className="card p-5">
             <h2 className="font-semibold mb-2">Webhook URL</h2>
-            <p className="text-xs text-gray-500 mb-2">Add this in your {def.name} dashboard so payments are confirmed even if the customer closes the browser.</p>
+            <p className="text-xs text-gray-500 mb-2">{def.id === "shiprocket" ? "Add this in Shiprocket → Settings → API → Webhooks (header x-api-key = your Webhook token) so tracking updates flow back automatically." : `Add this in your ${def.name} dashboard so payments are confirmed even if the customer closes the browser.`}</p>
             <div className="flex gap-2"><code className="input font-mono text-xs bg-gray-50 flex-1 overflow-x-auto">{webhook}</code><button onClick={() => copy(webhook)} className="btn-outline"><Copy className="h-4 w-4" /></button></div>
           </div>
         )}

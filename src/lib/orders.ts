@@ -2,6 +2,8 @@ import { db, schema } from "@/lib/db";
 import { eq, sql } from "drizzle-orm";
 import { id } from "@/lib/utils";
 import { sendOrderConfirmation, sendAdminNewOrder, sendShippingUpdate } from "@/lib/plugins/mail";
+import { mirrorRow } from "@/lib/plugins/firestore";
+import { getPluginState } from "@/lib/plugins/store";
 
 export function getOrder(orderId: string) {
   const order = db.select().from(schema.orders).where(eq(schema.orders.id, orderId)).get();
@@ -12,7 +14,10 @@ export function getOrder(orderId: string) {
 }
 
 export function addEvent(orderId: string, type: string, message: string) {
-  db.insert(schema.orderEvents).values({ id: id("evt_"), orderId, type, message }).run();
+  const eid = id("evt_");
+  db.insert(schema.orderEvents).values({ id: eid, orderId, type, message }).run();
+  mirrorRow("order_events", eid);
+  mirrorRow("orders", orderId);
 }
 
 /** Called once payment succeeds (or COD placed). Idempotent. */
@@ -49,6 +54,11 @@ export function decrementStock(orderId: string) {
 export async function notifyNewOrder(orderId: string) {
   const data = getOrder(orderId);
   if (!data) return;
+  for (const it of data.items) mirrorRow("order_items", it.id);
+  const sr = getPluginState("shiprocket");
+  if (sr.enabled && sr.config.autoShip === "true") {
+    import("@/lib/plugins/shiprocket").then((m) => m.createShiprocketOrder(orderId)).catch((e) => addEvent(orderId, "shipping", `Auto-create in Shiprocket failed: ${e instanceof Error ? e.message : e}`));
+  }
   const results = await Promise.allSettled([sendOrderConfirmation(data.order, data.items), sendAdminNewOrder(data.order, data.items)]);
   const failed = results.filter((r) => r.status === "rejected");
   addEvent(orderId, "email", failed.length ? "Notification emails attempted (some failed — check Mail log)" : "Confirmation emails queued");

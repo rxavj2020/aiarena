@@ -60,5 +60,6 @@ export async function registerUser(input: { email: string; password: string; nam
   const passwordHash = await bcrypt.hash(input.password, 10);
   const user = { id: id("usr_"), email, passwordHash, name: input.name.trim(), role: input.role ?? ("customer" as const) };
   db.insert(schema.users).values(user).run();
+  import("@/lib/plugins/firestore").then((m) => m.mirrorRow("users", user.id)).catch(() => {});
   return user;
 }

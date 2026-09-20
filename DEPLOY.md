@@ -53,6 +53,12 @@ CMD ["npm","start"]
 - **Cashfree**: Developers → API keys; Webhooks → `https://yourstore.com/api/webhooks/cashfree`.
 - **SMTP**: Gmail app password (host `smtp.gmail.com`, port 587) or a transactional provider (Resend/Brevo/SES) with SPF + DKIM configured on your domain. Use *Send test email* to verify.
 
+## Firestore as the durable database
+If you enable **Admin → Plugins → Google Firestore**, SQLite becomes a disposable local cache:
+1. Configure the service account, *Test connection*, enable, click **Sync everything to Firestore** once.
+2. On any new server/container: run `npm run db:seed` (creates the schema + admin), configure the Firestore plugin, click **Restore from Firestore**. All products, orders, customers and settings come back.
+3. Set *Background full-sync interval* (e.g. 15 min) as a safety net in addition to the real-time write-through.
+
 ## Backups
 `data/store.db` is the whole store. Back it up daily, e.g. `sqlite3 data/store.db ".backup backup-$(date +%F).db"` and push to R2 with `rclone`.
 

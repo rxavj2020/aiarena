@@ -47,7 +47,8 @@ Each plugin has a guided setup, a *Test connection* button and an on/off switch.
 | **Email (SMTP)** | Order confirmation to customer, new-order alert to you, shipping updates, contact form. Works with Gmail app passwords, Zoho, Resend, SES, Brevo… |
 | **Cloudflare R2** | Uploads go to R2 (S3 API) with a public/custom domain; falls back to `/public/uploads` |
 | **Cloudflare Hosting** | Deployment guide + API-based *Purge cache* button |
-| **Shiprocket** | Credentials test (extend `lib/plugins/payments.ts` for order push) |
+| **Shiprocket** | Full delivery management from the order page: compare courier rates, one-click ship (create order → AWB → pickup → label), tracking refresh, cancel, optional auto-create on paid orders, webhook (`/api/webhooks/shiprocket`) that updates order status automatically |
+| **Google Firestore** | Durable cloud database: every write is mirrored to Firestore in real time; one-click *Sync everything* and *Restore from Firestore* rebuild the local SQLite index on a fresh server; optional scheduled full sync. Uses the REST API with a service account (no heavy SDK) |
 | **WhatsApp button, Analytics (GA4/Pixel)** | Zero-code marketing widgets |
 
 Only one payment gateway can be active at a time (enabling one disables the other).

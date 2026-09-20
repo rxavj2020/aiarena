@@ -102,10 +102,3 @@ export async function testCloudflare(c: Record<string, string>) {
   if (!data.success) throw new Error(data.errors?.map((e) => e.message).join(", ") || "Invalid token/zone");
   return `Connected to zone ${data.result?.name} (${data.result?.status})`;
 }
-
-// ---------- Shiprocket ----------
-export async function testShiprocket(c: Record<string, string>) {
-  const r = await fetch("https://apiv2.shiprocket.in/v1/external/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: c.email, password: c.password }) });
-  if (!r.ok) throw new Error("Shiprocket login failed. Check API user credentials.");
-  return "Shiprocket authenticated";
-}

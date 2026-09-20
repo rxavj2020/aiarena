@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { getAllPluginStates } from "@/lib/plugins/store";
 import { CheckCircle2, XCircle, ChevronRight } from "lucide-react";
 
-const CATS: Record<string, string> = { payments: "Payments", email: "Email & notifications", storage: "Storage & media", hosting: "Hosting & CDN", shipping: "Shipping", marketing: "Marketing", analytics: "Analytics" };
+const CATS: Record<string, string> = { payments: "Payments", email: "Email & notifications", storage: "Database & media storage", hosting: "Hosting & CDN", shipping: "Shipping & delivery", marketing: "Marketing", analytics: "Analytics" };
 
 export default function PluginsPage() {
   const all = getAllPluginStates();

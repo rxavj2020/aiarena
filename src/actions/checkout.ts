@@ -10,6 +10,7 @@ import { razorpayCreateOrder, cashfreeCreateOrder } from "@/lib/plugins/payments
 import { addEvent, decrementStock, notifyNewOrder } from "@/lib/orders";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
+import { mirrorRow } from "@/lib/plugins/firestore";
 
 const addressSchema = z.object({
   name: z.string().min(2, "Enter your full name"),
@@ -78,6 +79,7 @@ export async function placeOrder(input: { email: string; address: z.infer<typeof
     .values(lines.map((l) => ({ id: id("oi_"), orderId, productId: l.productId, variantId: l.variantId, name: l.name, variantTitle: l.variantTitle, sku: l.sku, image: l.image, price: l.price, quantity: l.qty })))
     .run();
   addEvent(orderId, "created", `Order placed (${input.paymentMethod === "cod" ? "Cash on Delivery" : gateway})`);
+  for (const it of db.select({ id: schema.orderItems.id }).from(schema.orderItems).where(eq(schema.orderItems.orderId, orderId)).all()) mirrorRow("order_items", it.id);
 
   if (session && input.saveAddress) {
     db.insert(schema.addresses).values({ id: id("adr_"), userId: session.id, ...addr.data, isDefault: false }).run();

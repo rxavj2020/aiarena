@@ -59,4 +59,9 @@ CREATE TABLE IF NOT EXISTS mail_log (
   id TEXT PRIMARY KEY, "to" TEXT NOT NULL, subject TEXT NOT NULL, ok INTEGER NOT NULL, error TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
 `);
+  // additive column migrations
+  const cols = (sqlite.prepare("PRAGMA table_info(orders)").all() as { name: string }[]).map((c) => c.name);
+  for (const [name, ddl] of [["shiprocket_order_id", "TEXT"], ["shiprocket_shipment_id", "TEXT"], ["label_url", "TEXT"]]) {
+    if (!cols.includes(name)) sqlite.exec(`ALTER TABLE orders ADD COLUMN ${name} ${ddl}`);
+  }
 }

@@ -7,7 +7,10 @@ import { revalidatePath } from "next/cache";
 import { saveSettings, type StoreSettings } from "@/lib/settings";
 import { updateOrderStatus, addEvent } from "@/lib/orders";
 import { savePlugin, recordTest, getPluginState } from "@/lib/plugins/store";
-import { testRazorpay, testCashfree, testCloudflare, testShiprocket, cloudflarePurge } from "@/lib/plugins/payments";
+import { testRazorpay, testCashfree, testCloudflare, cloudflarePurge } from "@/lib/plugins/payments";
+import { testShiprocket, getCouriers, shipOrder, createShiprocketOrder, trackOrder, cancelShipment } from "@/lib/plugins/shiprocket";
+import { testFirestore, fullSync, restoreFromFirestore, mirrorRow, scheduleAutoSync } from "@/lib/plugins/firestore";
+import { getOrder } from "@/lib/orders";
 import { testR2 } from "@/lib/plugins/storage";
 import { makeTransport, sendMail } from "@/lib/plugins/mail";
 import { pluginById } from "@/lib/plugins/registry";
@@ -74,6 +77,8 @@ export async function saveProduct(productId: string | null, input: ProductInput)
       else db.insert(schema.variants).values({ id: id("var_"), ...vrow }).run();
     }
     if (variants.length) db.update(schema.products).set({ stock: variants.reduce((a, v) => a + v.stock, 0) }).where(eq(schema.products.id, pid)).run();
+    mirrorRow("products", pid);
+    for (const v of db.select({ id: schema.variants.id }).from(schema.variants).where(eq(schema.variants.productId, pid)).all()) mirrorRow("variants", v.id);
     revalidateAll();
     return { ok: true, id: pid, message: "Product saved" };
   } catch (e) {
@@ -82,14 +87,15 @@ export async function saveProduct(productId: string | null, input: ProductInput)
 }
 
 export async function deleteProducts(ids: string[]) {
-  return wrap(() => { db.delete(schema.products).where(inArray(schema.products.id, ids)).run(); revalidateAll(); }, `${ids.length} product(s) deleted`);
+  return wrap(() => { db.delete(schema.products).where(inArray(schema.products.id, ids)).run(); ids.forEach((i) => mirrorRow("products", i)); revalidateAll(); }, `${ids.length} product(s) deleted`);
 }
 export async function bulkProductStatus(ids: string[], status: "active" | "draft" | "archived") {
-  return wrap(() => { db.update(schema.products).set({ status }).where(inArray(schema.products.id, ids)).run(); revalidateAll(); }, `Updated ${ids.length} product(s)`);
+  return wrap(() => { db.update(schema.products).set({ status }).where(inArray(schema.products.id, ids)).run(); ids.forEach((i) => mirrorRow("products", i)); revalidateAll(); }, `Updated ${ids.length} product(s)`);
 }
 export async function quickUpdateProduct(pid: string, patch: { price?: number; stock?: number; featured?: boolean; status?: "active" | "draft" | "archived" }) {
   return wrap(() => {
     db.update(schema.products).set({ ...(patch.price != null ? { price: Math.round(patch.price * 100) } : {}), ...(patch.stock != null ? { stock: patch.stock } : {}), ...(patch.featured != null ? { featured: patch.featured } : {}), ...(patch.status ? { status: patch.status } : {}), updatedAt: new Date().toISOString() }).where(eq(schema.products.id, pid)).run();
+    mirrorRow("products", pid);
     revalidateAll();
   }, "Saved");
 }
@@ -110,13 +116,15 @@ export async function saveCategory(cid: string | null, input: { name: string; sl
   return wrap(() => {
     const slug = slugify(input.slug || input.name);
     const row = { name: input.name, slug, description: input.description ?? "", image: input.image ?? "", parentId: input.parentId || null, sortOrder: input.sortOrder ?? 0, featured: !!input.featured };
+    const theId = cid ?? id("cat_");
     if (cid) db.update(schema.categories).set(row).where(eq(schema.categories.id, cid)).run();
-    else db.insert(schema.categories).values({ id: id("cat_"), ...row }).run();
+    else db.insert(schema.categories).values({ id: theId, ...row }).run();
+    mirrorRow("categories", theId);
     revalidateAll();
   }, "Category saved");
 }
 export async function deleteCategory(cid: string) {
-  return wrap(() => { db.delete(schema.categories).where(eq(schema.categories.id, cid)).run(); revalidateAll(); }, "Category deleted");
+  return wrap(() => { db.delete(schema.categories).where(eq(schema.categories.id, cid)).run(); mirrorRow("categories", cid); revalidateAll(); }, "Category deleted");
 }
 
 // ---------- Orders ----------
@@ -144,21 +152,23 @@ export async function resendOrderEmail(orderId: string) {
 export async function saveCoupon(cid: string | null, input: { code: string; type: "percent" | "fixed" | "free_shipping"; value: number; minOrder: number; maxUses?: number | null; startsAt?: string | null; expiresAt?: string | null; active: boolean }) {
   return wrap(() => {
     const row = { code: input.code.toUpperCase().trim(), type: input.type, value: input.type === "fixed" ? Math.round(input.value * 100) : Math.round(input.value), minOrder: Math.round(input.minOrder * 100), maxUses: input.maxUses || null, startsAt: input.startsAt || null, expiresAt: input.expiresAt || null, active: input.active };
+    const theId = cid ?? id("cpn_");
     if (cid) db.update(schema.coupons).set(row).where(eq(schema.coupons.id, cid)).run();
-    else db.insert(schema.coupons).values({ id: id("cpn_"), ...row }).run();
+    else db.insert(schema.coupons).values({ id: theId, ...row }).run();
+    mirrorRow("coupons", theId);
     revalidatePath("/admin/coupons");
   }, "Coupon saved");
 }
 export async function deleteCoupon(cid: string) {
-  return wrap(() => { db.delete(schema.coupons).where(eq(schema.coupons.id, cid)).run(); revalidatePath("/admin/coupons"); }, "Coupon deleted");
+  return wrap(() => { db.delete(schema.coupons).where(eq(schema.coupons.id, cid)).run(); mirrorRow("coupons", cid); revalidatePath("/admin/coupons"); }, "Coupon deleted");
 }
 
 // ---------- Reviews ----------
 export async function setReviewApproval(rid: string, approved: boolean) {
-  return wrap(() => { db.update(schema.reviews).set({ approved }).where(eq(schema.reviews.id, rid)).run(); revalidateAll(); }, approved ? "Review approved" : "Review hidden");
+  return wrap(() => { db.update(schema.reviews).set({ approved }).where(eq(schema.reviews.id, rid)).run(); mirrorRow("reviews", rid); revalidateAll(); }, approved ? "Review approved" : "Review hidden");
 }
 export async function deleteReview(rid: string) {
-  return wrap(() => { db.delete(schema.reviews).where(eq(schema.reviews.id, rid)).run(); revalidateAll(); }, "Review deleted");
+  return wrap(() => { db.delete(schema.reviews).where(eq(schema.reviews.id, rid)).run(); mirrorRow("reviews", rid); revalidateAll(); }, "Review deleted");
 }
 
 // ---------- Pages ----------
@@ -166,13 +176,15 @@ export async function savePage(pid: string | null, input: { title: string; slug?
   return wrap(() => {
     const slug = slugify(input.slug || input.title);
     const row = { title: input.title, slug, content: input.content, published: input.published, showInFooter: input.showInFooter, updatedAt: new Date().toISOString() };
+    const theId = pid ?? id("pg_");
     if (pid) db.update(schema.pages).set(row).where(eq(schema.pages.id, pid)).run();
-    else db.insert(schema.pages).values({ id: id("pg_"), ...row }).run();
+    else db.insert(schema.pages).values({ id: theId, ...row }).run();
+    mirrorRow("pages", theId);
     revalidateAll();
   }, "Page saved");
 }
 export async function deletePage(pid: string) {
-  return wrap(() => { db.delete(schema.pages).where(eq(schema.pages.id, pid)).run(); revalidateAll(); }, "Page deleted");
+  return wrap(() => { db.delete(schema.pages).where(eq(schema.pages.id, pid)).run(); mirrorRow("pages", pid); revalidateAll(); }, "Page deleted");
 }
 
 // ---------- Settings ----------
@@ -186,13 +198,14 @@ export async function setUserRole(uid: string, role: "customer" | "admin") {
     const me = await requireAdmin();
     if (me.id === uid && role !== "admin") throw new Error("You cannot demote yourself");
     db.update(schema.users).set({ role }).where(eq(schema.users.id, uid)).run();
+    mirrorRow("users", uid);
     revalidatePath("/admin/customers");
   }, "Role updated");
 }
 
 // ---------- Plugins ----------
 export async function updatePlugin(pluginId: string, patch: { enabled?: boolean; config?: Record<string, string> }) {
-  return wrap(() => { savePlugin(pluginId, patch); revalidateAll(); }, patch.enabled === true ? "Plugin enabled" : patch.enabled === false ? "Plugin disabled" : "Configuration saved");
+  return wrap(() => { savePlugin(pluginId, patch); mirrorRow("plugins", pluginId); if (pluginId === "firestore") scheduleAutoSync(); revalidateAll(); }, patch.enabled === true ? "Plugin enabled" : patch.enabled === false ? "Plugin disabled" : "Configuration saved");
 }
 
 export async function testPlugin(pluginId: string, config?: Record<string, string>): Promise<R> {
@@ -209,6 +222,7 @@ export async function testPlugin(pluginId: string, config?: Record<string, strin
     else if (pluginId === "r2") msg = await testR2(c);
     else if (pluginId === "cloudflare") msg = await testCloudflare(c);
     else if (pluginId === "shiprocket") msg = await testShiprocket(c);
+    else if (pluginId === "firestore") msg = await testFirestore(c);
     else if (pluginId === "smtp") {
       await makeTransport(c).verify();
       const to = c.adminEmail || c.fromEmail || c.user;
@@ -235,4 +249,36 @@ export async function adminLogout() {
   const { destroySession } = await import("@/lib/auth");
   await destroySession();
   redirect("/admin/login");
+}
+
+// ---------- Firestore ----------
+export async function firestoreFullSync(): Promise<R> {
+  try { await requireAdmin(); const n = await fullSync(); revalidatePath("/admin/plugins/firestore"); return { ok: true, message: `Synced ${n} documents to Firestore` }; }
+  catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+export async function firestoreRestore(): Promise<R> {
+  try { await requireAdmin(); const n = await restoreFromFirestore(); revalidateAll(); return { ok: true, message: `Restored ${n} rows from Firestore` }; }
+  catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+
+// ---------- Shiprocket ----------
+export async function shiprocketCouriers(orderId: string) {
+  try { await requireAdmin(); const d = getOrder(orderId); if (!d) throw new Error("Order not found"); return { ok: true as const, couriers: await getCouriers(d.order, d.items) }; }
+  catch (e) { return { ok: false as const, error: e instanceof Error ? e.message : String(e) }; }
+}
+export async function shiprocketShip(orderId: string, courierId?: number): Promise<R> {
+  try { await requireAdmin(); const r = await shipOrder(orderId, courierId); revalidatePath(`/admin/orders/${orderId}`); const { sendShippingUpdate } = await import("@/lib/plugins/mail"); const o = getOrder(orderId); if (o) sendShippingUpdate(o.order).catch(() => {}); return { ok: true, message: `Shipped via ${r.courier} · AWB ${r.awb}` }; }
+  catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+export async function shiprocketCreateOnly(orderId: string): Promise<R> {
+  try { await requireAdmin(); const r = await createShiprocketOrder(orderId); revalidatePath(`/admin/orders/${orderId}`); return { ok: true, message: `Created in Shiprocket (#${r.shiprocketOrderId})` }; }
+  catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
+}
+export async function shiprocketTrack(orderId: string) {
+  try { await requireAdmin(); return { ok: true as const, ...(await trackOrder(orderId)) }; }
+  catch (e) { return { ok: false as const, error: e instanceof Error ? e.message : String(e) }; }
+}
+export async function shiprocketCancel(orderId: string): Promise<R> {
+  try { await requireAdmin(); await cancelShipment(orderId); revalidatePath(`/admin/orders/${orderId}`); return { ok: true, message: "Shipment cancelled" }; }
+  catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; }
 }
