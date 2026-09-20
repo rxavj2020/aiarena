@@ -1,25 +1,34 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Expand, X, ZoomIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, Expand, X, ZoomIn, ZoomOut } from "lucide-react";
 
 export function Gallery({ images, name, variantImage }: { images: string[]; name: string; variantImage?: string | null }) {
-  // Combine variant image first if exists
   const allImages = variantImage ? [variantImage, ...images.filter((img) => img !== variantImage)] : images;
   const [active, setActive] = useState(0);
   const [zoom, setZoom] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [lightbox, setLightbox] = useState(false);
-  const [lightboxZoom, setLightboxZoom] = useState(false);
-  const mainRef = useRef<HTMLDivElement>(null);
 
-  // Reset active when variant changes
+  // Lightbox zoom & pan states
+  const [lbScale, setLbScale] = useState(1);
+  const [lbPan, setLbPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [pinchStart, setPinchStart] = useState<{ dist: number; scale: number } | null>(null);
+
+  const mainRef = useRef<HTMLDivElement>(null);
+  const lbImgRef = useRef<HTMLImageElement>(null);
+  const lbContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (variantImage) setActive(0);
   }, [variantImage]);
 
-  // Ensure active index valid
   useEffect(() => {
     if (active >= allImages.length) setActive(0);
+    // reset zoom/pan on image change
+    setLbScale(1);
+    setLbPan({ x: 0, y: 0 });
   }, [allImages.length, active]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -33,7 +42,6 @@ export function Gallery({ images, name, variantImage }: { images: string[]; name
   const next = useCallback(() => setActive((a) => (a + 1) % allImages.length), [allImages.length]);
   const prev = useCallback(() => setActive((a) => (a - 1 + allImages.length) % allImages.length), [allImages.length]);
 
-  // Keyboard navigation in lightbox
   useEffect(() => {
     if (!lightbox) return;
     const onKey = (e: KeyboardEvent) => {
@@ -42,22 +50,91 @@ export function Gallery({ images, name, variantImage }: { images: string[]; name
       if (e.key === "ArrowLeft") prev();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // prevent body scroll
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
   }, [lightbox, next, prev]);
+
+  // Lightbox drag handlers
+  const handleLbMouseDown = (e: React.MouseEvent) => {
+    if (lbScale <= 1) return;
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - lbPan.x, y: e.clientY - lbPan.y });
+  };
+  const handleLbMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || lbScale <= 1) return;
+    setLbPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+  };
+  const handleLbMouseUp = () => setIsDragging(false);
+
+  // Touch handlers for pinch & drag
+  const getTouchDist = (t1: React.Touch, t2: React.Touch) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dist = getTouchDist(e.touches[0], e.touches[1]);
+      setPinchStart({ dist, scale: lbScale });
+    } else if (e.touches.length === 1 && lbScale > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.touches[0].clientX - lbPan.x, y: e.touches[0].clientY - lbPan.y });
+    }
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchStart) {
+      e.preventDefault();
+      const dist = getTouchDist(e.touches[0], e.touches[1]);
+      const newScale = Math.min(4, Math.max(1, pinchStart.scale * (dist / pinchStart.dist)));
+      setLbScale(newScale);
+      if (newScale <= 1.05) setLbPan({ x: 0, y: 0 });
+    } else if (e.touches.length === 1 && isDragging && lbScale > 1) {
+      e.preventDefault();
+      setLbPan({ x: e.touches[0].clientX - dragStart.x, y: e.touches[0].clientY - dragStart.y });
+    }
+  };
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setPinchStart(null);
+    if (lbScale <= 1.05) {
+      setLbScale(1);
+      setLbPan({ x: 0, y: 0 });
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!lightbox) return;
+    e.preventDefault();
+    const delta = -e.deltaY;
+    const newScale = Math.min(4, Math.max(1, lbScale + delta * 0.001));
+    setLbScale(newScale);
+    if (newScale <= 1.05) setLbPan({ x: 0, y: 0 });
+  };
+
+  const toggleZoom = () => {
+    if (lbScale > 1) {
+      setLbScale(1);
+      setLbPan({ x: 0, y: 0 });
+    } else {
+      setLbScale(2.5);
+    }
+  };
 
   if (!allImages.length) return <div className="aspect-square rounded-xl bg-[#f1f2f4] border border-[#e0e0e0]" />;
 
   return (
     <>
       <div className="flex flex-col-reverse lg:flex-row gap-3">
-        {/* Thumbnails - desktop vertical, mobile horizontal */}
+        {/* Thumbnails */}
         {allImages.length > 1 && (
           <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto lg:max-h-[520px] no-scrollbar lg:w-[80px] shrink-0 p-1">
             {allImages.map((src, k) => (
               <button
                 key={k}
                 onClick={() => setActive(k)}
-                className={`relative aspect-square w-16 h-16 lg:w-[72px] lg:h-[72px] shrink-0 overflow-hidden rounded-xl border-2 transition-all bg-white ${
+                className={`relative aspect-square w-14 h-14 sm:w-16 sm:h-16 lg:w-[72px] lg:h-[72px] shrink-0 overflow-hidden rounded-lg sm:rounded-xl border-2 transition-all bg-white ${
                   k === active ? "border-[#2874f0] shadow-sm ring-2 ring-[#2874f0]/20" : "border-[#e0e0e0] hover:border-[#212121]"
                 }`}
               >
@@ -75,12 +152,12 @@ export function Gallery({ images, name, variantImage }: { images: string[]; name
             onMouseEnter={() => setZoom(true)}
             onMouseLeave={() => setZoom(false)}
             onMouseMove={handleMouseMove}
-            className="relative aspect-square overflow-hidden rounded-xl bg-white border border-[#e0e0e0] group cursor-zoom-in"
+            className="relative aspect-square overflow-hidden rounded-lg sm:rounded-xl bg-white border border-[#e0e0e0] group cursor-zoom-in touch-manipulation"
             onClick={() => setLightbox(true)}
           >
-            <img src={allImages[active]} alt={name} className="h-full w-full object-contain p-2 sm:p-4" />
+            <img src={allImages[active]} alt={name} className="h-full w-full object-contain p-2 sm:p-4 select-none" draggable={false} />
 
-            {/* Zoom lens desktop */}
+            {/* Desktop hover zoom lens */}
             {zoom && (
               <div
                 className="absolute inset-0 hidden lg:block pointer-events-none z-10"
@@ -95,25 +172,23 @@ export function Gallery({ images, name, variantImage }: { images: string[]; name
               />
             )}
 
-            {/* Nav arrows */}
             {allImages.length > 1 && (
               <>
                 <button
                   onClick={(e) => { e.stopPropagation(); prev(); }}
-                  className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white shadow-md border border-[#e0e0e0] flex items-center justify-center hover:bg-[#f1f2f4] transition z-20"
+                  className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white/90 backdrop-blur shadow-md border border-[#e0e0e0] flex items-center justify-center hover:bg-white transition z-20"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); next(); }}
-                  className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white shadow-md border border-[#e0e0e0] flex items-center justify-center hover:bg-[#f1f2f4] transition z-20"
+                  className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-white/90 backdrop-blur shadow-md border border-[#e0e0e0] flex items-center justify-center hover:bg-white transition z-20"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </>
             )}
 
-            {/* Expand button - moved to top-right to avoid overlapping with dots */}
             <button
               onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
               className="absolute right-2 sm:right-3 top-2 sm:top-3 h-8 w-8 rounded-full bg-white/90 backdrop-blur shadow-md border border-[#e0e0e0] flex items-center justify-center hover:bg-white transition z-20"
@@ -122,7 +197,6 @@ export function Gallery({ images, name, variantImage }: { images: string[]; name
               <Expand className="h-4 w-4" />
             </button>
 
-            {/* Dots - centered bottom with safe spacing from edges */}
             {allImages.length > 1 && (
               <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
                 {allImages.map((_, i) => (
@@ -145,66 +219,99 @@ export function Gallery({ images, name, variantImage }: { images: string[]; name
         </div>
       </div>
 
-      {/* Full-screen Lightbox - Fixed */}
+      {/* Full-screen Lightbox - Fixed overlapping & with drag/pinch zoom */}
       {lightbox && (
-        <div className="fixed inset-0 z-[100] bg-black flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between p-3 sm:p-4 text-white border-b border-white/10 shrink-0">
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col select-none">
+          {/* Header - fixed height, no overlap */}
+          <div className="flex items-center justify-between p-3 sm:p-4 text-white bg-black border-b border-white/10 shrink-0 z-30">
             <div className="flex items-center gap-3 min-w-0">
               <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                 <span className="text-xs font-bold">{active + 1}</span>
               </div>
-              <span className="text-sm font-medium truncate">{name}</span>
+              <span className="text-sm font-medium truncate max-w-[200px] sm:max-w-[400px]">{name}</span>
               <span className="text-xs text-white/60 hidden sm:inline">{active + 1} of {allImages.length}</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <button onClick={() => setLightboxZoom(!lightboxZoom)} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
-                <ZoomIn className="h-5 w-5" />
+              <button onClick={toggleZoom} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition" title={lbScale > 1 ? "Zoom out" : "Zoom in"}>
+                {lbScale > 1 ? <ZoomOut className="h-5 w-5" /> : <ZoomIn className="h-5 w-5" />}
               </button>
-              <button onClick={() => setLightbox(false)} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
+              <button onClick={() => setLightbox(false)} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
                 <X className="h-5 w-5" />
               </button>
             </div>
           </div>
 
-          {/* Main image area */}
-          <div className="flex-1 relative flex items-center justify-center p-2 sm:p-8 overflow-hidden">
+          {/* Main image area - isolated, no overlapping with header/footer */}
+          <div
+            ref={lbContainerRef}
+            className="flex-1 relative flex items-center justify-center overflow-hidden bg-black touch-none"
+            onMouseDown={handleLbMouseDown}
+            onMouseMove={handleLbMouseMove}
+            onMouseUp={handleLbMouseUp}
+            onMouseLeave={handleLbMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onWheel={handleWheel}
+            style={{ cursor: lbScale > 1 ? (isDragging ? "grabbing" : "grab") : "zoom-in" }}
+          >
             <img
+              ref={lbImgRef}
               src={allImages[active]}
               alt={name}
-              className={`max-h-full max-w-full object-contain transition-transform duration-300 ${lightboxZoom ? "scale-[1.8] cursor-zoom-out" : "cursor-zoom-in"}`}
-              onClick={() => setLightboxZoom(!lightboxZoom)}
+              className="max-h-full max-w-full object-contain select-none will-change-transform"
+              style={{
+                transform: `translate(${lbPan.x}px, ${lbPan.y}px) scale(${lbScale})`,
+                transition: isDragging || pinchStart ? "none" : "transform 0.2s ease-out",
+              }}
+              onDoubleClick={toggleZoom}
+              draggable={false}
             />
 
-            {/* Navigation */}
-            {allImages.length > 1 && (
+            {/* Navigation - above image, not overlapping content */}
+            {allImages.length > 1 && lbScale === 1 && (
               <>
                 <button
-                  onClick={prev}
-                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/10 backdrop-blur hover:bg-white/20 text-white flex items-center justify-center transition"
+                  onClick={(e) => { e.stopPropagation(); prev(); }}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/10 backdrop-blur hover:bg-white/20 text-white flex items-center justify-center transition z-20"
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </button>
                 <button
-                  onClick={next}
-                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/10 backdrop-blur hover:bg-white/20 text-white flex items-center justify-center transition"
+                  onClick={(e) => { e.stopPropagation(); next(); }}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/10 backdrop-blur hover:bg-white/20 text-white flex items-center justify-center transition z-20"
                 >
                   <ChevronRight className="h-6 w-6" />
                 </button>
               </>
             )}
+
+            {/* Zoom indicator */}
+            {lbScale > 1 && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur text-white text-xs px-3 py-1 rounded-full border border-white/10 z-20">
+                {Math.round(lbScale * 100)}% • Drag to pan • Pinch to zoom
+              </div>
+            )}
           </div>
 
-          {/* Thumbnails */}
-          <div className="shrink-0 p-3 sm:p-4 bg-black/50 backdrop-blur border-t border-white/10">
-            <div className="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar">
-              {allImages.map((src, i) => (
-                <button key={i} onClick={() => setActive(i)} className={`relative h-14 w-14 sm:h-20 sm:w-20 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${i === active ? "border-white scale-105" : "border-white/20 opacity-60 hover:opacity-100"}`}>
-                  <img src={src} alt="" className="h-full w-full object-cover" />
-                </button>
-              ))}
+          {/* Thumbnails - fixed, not overlapping */}
+          <div className="shrink-0 bg-black border-t border-white/10 z-30">
+            <div className="p-3 sm:p-4">
+              <div className="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar">
+                {allImages.map((src, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setActive(i); setLbScale(1); setLbPan({ x: 0, y: 0 }); }}
+                    className={`relative h-14 w-14 sm:h-16 sm:w-16 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${i === active ? "border-white scale-105" : "border-white/20 opacity-60 hover:opacity-100"}`}
+                  >
+                    <img src={src} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="text-center text-[11px] text-white/50 mt-3 hidden sm:block">Use arrow keys to navigate · ESC to close · Click image to zoom</div>
+            <div className="text-center text-[11px] text-white/50 pb-3 hidden sm:block">
+              Use arrow keys • ESC to close • Scroll to zoom • Drag to pan • Double-click to zoom • Pinch on mobile
+            </div>
           </div>
         </div>
       )}

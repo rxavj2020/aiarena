@@ -15,8 +15,6 @@ export function HeroBanners({ banners }: { banners: Banner[] }) {
 
   if (!banners.length) return null;
 
-  const b = banners[idx];
-
   return (
     <div className="relative overflow-hidden rounded-lg border border-[#e0e0e0] bg-white group">
       <div className="relative h-[180px] sm:h-[280px] lg:h-[360px] overflow-hidden">
@@ -37,14 +35,11 @@ export function HeroBanners({ banners }: { banners: Banner[] }) {
             {/* Gradient for text readability on mobile */}
             <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent sm:from-white sm:via-white/60 sm:to-transparent lg:via-white/40" />
             <div className="absolute inset-0 flex items-center">
-              <div className="p-5 sm:p-8 lg:p-12 max-w-[65%] sm:max-w-[50%]">
-                <div className="inline-flex items-center gap-1.5 bg-[#2874f0] text-white text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full mb-2">
-                  ✨ New Collection
-                </div>
+              <div className="p-5 sm:p-8 lg:p-12 max-w-[70%] sm:max-w-[50%]">
                 <h2 className="font-bold text-lg sm:text-2xl lg:text-4xl leading-tight text-[#212121]">{banner.title}</h2>
                 {banner.subtitle && <p className="mt-1.5 sm:mt-3 text-xs sm:text-sm text-[#878787] leading-snug line-clamp-2">{banner.subtitle}</p>}
                 {banner.ctaText && (
-                  <span className="mt-3 sm:mt-5 inline-flex items-center gap-2 bg-[#fb641b] text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold shadow-sm hover:bg-[#e55a17]">
+                  <span className="mt-3 sm:mt-5 hidden sm:inline-flex items-center gap-2 bg-[#fb641b] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-[#e55a17]">
                     {banner.ctaText} →
                   </span>
                 )}
