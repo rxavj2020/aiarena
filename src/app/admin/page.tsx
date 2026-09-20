@@ -54,7 +54,16 @@ export default async function Dashboard() {
           </div>
           <div className="flex-1">
             <div className="font-bold text-amber-900">Setup incomplete</div>
-            <div className="text-amber-800 mt-1">No <b>{missing.join("</b> and no <b>")}</b> configured. Customers can only use COD.</div>
+            <div className="text-amber-800 mt-1">
+              No{" "}
+              {missing.map((m, idx) => (
+                <span key={m}>
+                  <b>{m}</b>
+                  {idx < missing.length - 1 ? " and no " : ""}
+                </span>
+              ))}{" "}
+              configured. Customers can only use COD.
+            </div>
           </div>
           <Link href="/admin/plugins" className="btn-sm bg-amber-600 text-white rounded-full px-4">Fix now</Link>
         </div>

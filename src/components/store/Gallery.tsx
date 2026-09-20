@@ -113,28 +113,34 @@ export function Gallery({ images, name, variantImage }: { images: string[]; name
               </>
             )}
 
-            {/* Expand button */}
+            {/* Expand button - moved to top-right to avoid overlapping with dots */}
             <button
               onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
-              className="absolute right-2 sm:right-3 bottom-2 sm:bottom-3 h-8 w-8 rounded-full bg-white shadow-md border border-[#e0e0e0] flex items-center justify-center hover:bg-[#f1f2f4] transition z-20"
+              className="absolute right-2 sm:right-3 top-2 sm:top-3 h-8 w-8 rounded-full bg-white/90 backdrop-blur shadow-md border border-[#e0e0e0] flex items-center justify-center hover:bg-white transition z-20"
+              aria-label="View full-screen"
             >
               <Expand className="h-4 w-4" />
             </button>
 
-            {/* Dots mobile */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 lg:hidden z-20 bg-black/20 backdrop-blur px-2 py-1 rounded-full">
-              {allImages.map((_, i) => (
-                <span key={i} className={`h-1.5 rounded-full transition-all ${i === active ? "w-6 bg-white" : "w-1.5 bg-white/60"}`} />
-              ))}
-            </div>
+            {/* Dots - centered bottom with safe spacing from edges */}
+            {allImages.length > 1 && (
+              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                {allImages.map((_, i) => (
+                  <span key={i} className={`h-1.5 rounded-full transition-all ${i === active ? "w-6 bg-white" : "w-1.5 bg-white/60"}`} />
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="mt-3 flex items-center justify-between text-xs text-[#878787]">
-            <span className="font-medium bg-[#f1f2f4] px-2 py-1 rounded-full">
+          <div className="mt-3 flex items-center justify-between gap-2 text-xs text-[#878787]">
+            <span className="font-medium bg-[#f1f2f4] px-2.5 py-1 rounded-full border border-[#e0e0e0] shrink-0">
               {active + 1} / {allImages.length}
             </span>
-            <span className="hidden sm:flex items-center gap-1"><ZoomIn className="h-3 w-3" /> Click to view full-screen</span>
-            <span className="sm:hidden">Tap to expand</span>
+            <button onClick={() => setLightbox(true)} className="flex items-center gap-1.5 hover:text-[#212121] transition font-medium truncate">
+              <ZoomIn className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">Click to view full-screen</span>
+              <span className="sm:hidden">Tap to view full-screen</span>
+            </button>
           </div>
         </div>
       </div>
