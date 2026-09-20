@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSettings } from "@/lib/settings";
 import { featuredProducts, newestProducts, listCategories, categoryProductCounts } from "@/lib/catalog";
 import { ProductCard } from "@/components/store/ProductCard";
+import { RecentlyViewed } from "@/components/store/RecentlyViewed";
 import { ArrowRight, Truck, ShieldCheck, RefreshCw, Headphones, Sparkles } from "lucide-react";
 
 const icons: Record<string, React.ComponentType<{ className?: string }>> = { truck: Truck, shield: ShieldCheck, refresh: RefreshCw, headset: Headphones, sparkles: Sparkles };
@@ -96,6 +97,10 @@ export default async function HomePage() {
           );
         return null;
       })}
+
+      <div className="container-x pb-12">
+        <RecentlyViewed currency={s.currency} />
+      </div>
     </div>
   );
 }

@@ -8,7 +8,20 @@ export const listCategories = cache(() => db.select().from(schema.categories).or
 
 export const getCategory = cache((slug: string) => db.select().from(schema.categories).where(eq(schema.categories.slug, slug)).get());
 
-export type ShopQuery = { q?: string; category?: string; sort?: string; min?: number; max?: number; page?: number; perPage?: number; tag?: string; featured?: boolean };
+export type ShopQuery = {
+  q?: string;
+  category?: string;
+  sort?: string;
+  min?: number;
+  max?: number;
+  page?: number;
+  perPage?: number;
+  tag?: string;
+  featured?: boolean;
+  inStock?: boolean;
+  minDiscount?: number;
+  minRating?: number;
+};
 
 export function queryProducts(qs: ShopQuery) {
   const perPage = qs.perPage ?? 12;
@@ -27,6 +40,12 @@ export function queryProducts(qs: ShopQuery) {
   if (qs.tag) conds.push(like(schema.products.tags, `%"${qs.tag}"%`));
   if (qs.featured) conds.push(eq(schema.products.featured, true));
   if (qs.sort === "discount") conds.push(gt(schema.products.compareAtPrice, schema.products.price));
+  if (qs.inStock) conds.push(or(eq(schema.products.trackStock, false), gt(schema.products.stock, 0))!);
+  if (qs.minDiscount) {
+    conds.push(
+      sql`${schema.products.compareAtPrice} IS NOT NULL AND ${schema.products.compareAtPrice} > ${schema.products.price} AND ((${schema.products.compareAtPrice} - ${schema.products.price}) * 100.0 / ${schema.products.compareAtPrice}) >= ${qs.minDiscount}`
+    );
+  }
 
   const order =
     qs.sort === "price_asc" ? asc(schema.products.price)
@@ -38,7 +57,13 @@ export function queryProducts(qs: ShopQuery) {
   const where = and(...conds);
   const total = db.select({ n: sql<number>`count(*)` }).from(schema.products).where(where).get()?.n ?? 0;
   const rows = db.select().from(schema.products).where(where).orderBy(order).limit(perPage).offset((page - 1) * perPage).all();
-  return { items: attachRatings(rows), total, page, perPage, pages: Math.ceil(total / perPage) };
+  let items = attachRatings(rows);
+
+  if (qs.minRating) {
+    items = items.filter((p) => p.rating >= qs.minRating!);
+  }
+
+  return { items, total, page, perPage, pages: Math.ceil(total / perPage) };
 }
 
 function attachRatings(rows: schema.Product[]) {

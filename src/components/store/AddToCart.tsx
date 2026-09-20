@@ -5,6 +5,7 @@ import type { Variant } from "@/lib/db/schema";
 import { formatMoney } from "@/lib/format";
 import { Minus, Plus, ShoppingBag, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useStore } from "@/lib/store/useStore";
 
 export function AddToCart({ product, variants, currency }: { product: { id: string; stock: number; trackStock: boolean; options: { name: string; values: string[] }[]; price: number }; variants: Variant[]; currency: string }) {
   const [sel, setSel] = useState<Record<string, string>>({});
@@ -13,6 +14,7 @@ export function AddToCart({ product, variants, currency }: { product: { id: stri
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const router = useRouter();
+  const { openCart, addToast } = useStore();
 
   const variant = product.options.length ? variants.find((v) => product.options.every((o) => v.optionValues[o.name] === sel[o.name])) : undefined;
   const allSelected = product.options.every((o) => sel[o.name]);
@@ -31,7 +33,15 @@ export function AddToCart({ product, variants, currency }: { product: { id: stri
     start(async () => {
       const r = await addToCart(fd);
       if (r && !r.ok) setErr(r.error ?? "Failed");
-      else { setDone(true); router.refresh(); setTimeout(() => setDone(false), 2000); }
+      else {
+        setDone(true);
+        router.refresh();
+        if (!buyNow) {
+          openCart();
+          addToast("Added to cart", "success");
+        }
+        setTimeout(() => setDone(false), 2000);
+      }
     });
   };
 
