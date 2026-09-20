@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, X, SlidersHorizontal, Check, LayoutGrid, List, Star } from "lucide-react";
 import { ProductCard } from "@/components/store/ProductCard";
@@ -9,7 +9,6 @@ import type { Category, Product } from "@/lib/db/schema";
 type Props = {
   categories: Category[];
   searchParams: Record<string, string | undefined>;
-  mk: (patch: Record<string, string | undefined>) => string;
   activeCategory?: Category;
   products: (Product & { rating: number; reviewCount: number })[];
   currency: string;
@@ -42,10 +41,18 @@ function Collapsible({
   );
 }
 
-export function ShopClient({ categories, searchParams: sp, mk, activeCategory, products, currency, page, pages, hasActiveFilters }: Props) {
+export function ShopClient({ categories, searchParams: sp, activeCategory, products, currency, page, pages, hasActiveFilters }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopHidden, setDesktopHidden] = useState(false);
   const [view, setView] = useState<"grid" | "list">("grid");
+
+  const mk = useMemo(() => {
+    return (patch: Record<string, string | undefined>) => {
+      const u = new URLSearchParams();
+      for (const [k, v] of Object.entries({ ...sp, ...patch })) if (v) u.set(k, v);
+      return `/shop?${u.toString()}`;
+    };
+  }, [sp]);
 
   return (
     <>
@@ -56,11 +63,11 @@ export function ShopClient({ categories, searchParams: sp, mk, activeCategory, p
           <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[20px] max-h-[86vh] flex flex-col animate-slide-up shadow-2xl">
             <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white rounded-t-[20px]">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-gray-900 text-white flex items-center justify-center">
+                <div className="h-8 w-8 rounded-full bg-[#2874f0] text-white flex items-center justify-center">
                   <SlidersHorizontal className="h-4 w-4" />
                 </div>
                 <span className="font-bold">Filters</span>
-                {hasActiveFilters && <span className="bg-[#ff6b00] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{Object.values(sp).filter(Boolean).length}</span>}
+                {hasActiveFilters && <span className="bg-[#fb641b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{Object.values(sp).filter(Boolean).length}</span>}
               </div>
               <div className="flex items-center gap-2">
                 {hasActiveFilters && (
@@ -93,18 +100,18 @@ export function ShopClient({ categories, searchParams: sp, mk, activeCategory, p
         <div className="flex items-center gap-2">
           <button
             onClick={() => (window.innerWidth < 1024 ? setMobileOpen(true) : setDesktopHidden(!desktopHidden))}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 text-sm font-semibold hover:border-gray-900 transition shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 text-sm font-semibold hover:border-[#2874f0] hover:text-[#2874f0] transition shadow-sm"
           >
             <SlidersHorizontal className="h-4 w-4" />
             {desktopHidden ? "Show filters" : "Filters"}
-            {hasActiveFilters && <span className="h-2 w-2 rounded-full bg-[#ff6b00] animate-pulse" />}
+            {hasActiveFilters && <span className="h-2 w-2 rounded-full bg-[#fb641b] animate-pulse" />}
           </button>
 
           <div className="hidden sm:flex items-center gap-1 ml-2 bg-white border border-gray-200 rounded-full p-1">
-            <button onClick={() => setView("grid")} className={`h-7 w-7 rounded-full flex items-center justify-center transition ${view === "grid" ? "bg-gray-900 text-white" : "text-gray-500 hover:text-gray-900"}`}>
+            <button onClick={() => setView("grid")} className={`h-7 w-7 rounded-full flex items-center justify-center transition ${view === "grid" ? "bg-[#2874f0] text-white" : "text-gray-500 hover:text-gray-900"}`}>
               <LayoutGrid className="h-3.5 w-3.5" />
             </button>
-            <button onClick={() => setView("list")} className={`h-7 w-7 rounded-full flex items-center justify-center transition ${view === "list" ? "bg-gray-900 text-white" : "text-gray-500 hover:text-gray-900"}`}>
+            <button onClick={() => setView("list")} className={`h-7 w-7 rounded-full flex items-center justify-center transition ${view === "list" ? "bg-[#2874f0] text-white" : "text-gray-500 hover:text-gray-900"}`}>
               <List className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -128,7 +135,7 @@ export function ShopClient({ categories, searchParams: sp, mk, activeCategory, p
               <Link
                 key={v}
                 href={mk({ sort: v, page: undefined })}
-                className={`px-3.5 py-2 rounded-full font-semibold transition whitespace-nowrap ${ (sp.sort ?? "newest") === v ? "bg-gray-900 text-white shadow-sm" : "bg-white border border-gray-200 text-gray-700 hover:border-gray-900 hover:text-gray-900" }`}
+                className={`px-3.5 py-2 rounded-full font-semibold transition whitespace-nowrap ${ (sp.sort ?? "newest") === v ? "bg-[#2874f0] text-white shadow-sm" : "bg-white border border-gray-200 text-gray-700 hover:border-[#2874f0] hover:text-[#2874f0]" }`}
               >
                 {l}
               </Link>
@@ -154,32 +161,32 @@ export function ShopClient({ categories, searchParams: sp, mk, activeCategory, p
       {hasActiveFilters && (
         <div className="mb-5 flex flex-wrap items-center gap-2">
           {sp.q && (
-            <Link href={mk({ q: undefined, page: undefined })} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-gray-900">
+            <Link href={mk({ q: undefined, page: undefined })} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-[#2874f0]">
               Search: {sp.q} <X className="h-3 w-3" />
             </Link>
           )}
           {sp.category && activeCategory && (
-            <Link href={mk({ category: undefined, page: undefined })} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-gray-900">
+            <Link href={mk({ category: undefined, page: undefined })} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-[#2874f0]">
               {activeCategory.name} <X className="h-3 w-3" />
             </Link>
           )}
           {sp.inStock === "1" && (
-            <Link href={mk({ inStock: undefined, page: undefined })} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-gray-900">
+            <Link href={mk({ inStock: undefined, page: undefined })} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-[#2874f0]">
               In stock <X className="h-3 w-3" />
             </Link>
           )}
           {sp.rating && (
-            <Link href={mk({ rating: undefined, page: undefined })} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-gray-900">
+            <Link href={mk({ rating: undefined, page: undefined })} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-[#2874f0]">
               {sp.rating}★ & above <X className="h-3 w-3" />
             </Link>
           )}
           {sp.discount && (
-            <Link href={mk({ discount: undefined, page: undefined })} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-gray-900">
+            <Link href={mk({ discount: undefined, page: undefined })} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-[#2874f0]">
               {sp.discount}% off <X className="h-3 w-3" />
             </Link>
           )}
           {(sp.min || sp.max) && (
-            <Link href={mk({ min: undefined, max: undefined, page: undefined })} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-gray-900">
+            <Link href={mk({ min: undefined, max: undefined, page: undefined })} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs font-medium hover:border-[#2874f0]">
               ₹{sp.min || "0"} - ₹{sp.max || "∞"} <X className="h-3 w-3" />
             </Link>
           )}
@@ -189,8 +196,8 @@ export function ShopClient({ categories, searchParams: sp, mk, activeCategory, p
       <div className={`grid gap-6 ${desktopHidden ? "grid-cols-1" : "lg:grid-cols-[300px_1fr]"}`}>
         {/* Sidebar */}
         <aside className={`${desktopHidden ? "hidden" : "hidden lg:block"} shrink-0`}>
-          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden sticky top-[88px] shadow-sm">
-            <div className="p-4 border-b bg-gray-50/70 flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden sticky top-[88px] shadow-sm">
+            <div className="p-4 border-b bg-[#f8f9fb] flex items-center justify-between">
               <span className="font-bold text-sm tracking-wide">FILTERS</span>
               {hasActiveFilters && (
                 <Link href="/shop" className="text-xs font-bold text-[#2874f0] hover:underline">
@@ -207,7 +214,7 @@ export function ShopClient({ categories, searchParams: sp, mk, activeCategory, p
         {/* Products */}
         <div className="min-w-0">
           {products.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-12 sm:p-16 text-center">
+            <div className="bg-white rounded-xl border border-gray-200 p-12 sm:p-16 text-center">
               <div className="mx-auto h-20 w-20 rounded-full bg-gray-50 flex items-center justify-center mb-4">
                 <SlidersHorizontal className="h-8 w-8 text-gray-300" />
               </div>
@@ -227,7 +234,7 @@ export function ShopClient({ categories, searchParams: sp, mk, activeCategory, p
                 <div className="mt-10 flex flex-wrap justify-center items-center gap-1.5">
                   <Link
                     href={mk({ page: String(Math.max(1, page - 1)) })}
-                    className={`h-9 px-4 flex items-center justify-center rounded-full text-xs font-semibold border transition ${page === 1 ? "opacity-40 pointer-events-none bg-white border-gray-200" : "bg-white border-gray-200 hover:border-gray-900"}`}
+                    className={`h-9 px-4 flex items-center justify-center rounded-full text-xs font-semibold border transition ${page === 1 ? "opacity-40 pointer-events-none bg-white border-gray-200" : "bg-white border-gray-200 hover:border-[#2874f0]"}`}
                   >
                     Previous
                   </Link>
@@ -242,7 +249,7 @@ export function ShopClient({ categories, searchParams: sp, mk, activeCategory, p
                       <Link
                         key={n}
                         href={mk({ page: String(n) })}
-                        className={`h-9 w-9 flex items-center justify-center rounded-full text-xs font-bold transition ${n === page ? "bg-gray-900 text-white shadow-sm" : "bg-white border border-gray-200 text-gray-700 hover:border-gray-900"}`}
+                        className={`h-9 w-9 flex items-center justify-center rounded-full text-xs font-bold transition ${n === page ? "bg-[#2874f0] text-white shadow-sm" : "bg-white border border-gray-200 text-gray-700 hover:border-[#2874f0]"}`}
                       >
                         {n}
                       </Link>
@@ -250,7 +257,7 @@ export function ShopClient({ categories, searchParams: sp, mk, activeCategory, p
                   })}
                   <Link
                     href={mk({ page: String(Math.min(pages, page + 1)) })}
-                    className={`h-9 px-4 flex items-center justify-center rounded-full text-xs font-semibold border transition ${page === pages ? "opacity-40 pointer-events-none bg-white border-gray-200" : "bg-white border-gray-200 hover:border-gray-900"}`}
+                    className={`h-9 px-4 flex items-center justify-center rounded-full text-xs font-semibold border transition ${page === pages ? "opacity-40 pointer-events-none bg-white border-gray-200" : "bg-white border-gray-200 hover:border-[#2874f0]"}`}
                   >
                     Next
                   </Link>
@@ -263,15 +270,15 @@ export function ShopClient({ categories, searchParams: sp, mk, activeCategory, p
 
       {/* Mobile floating filter */}
       <div className="lg:hidden fixed bottom-[84px] left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
-        <button onClick={() => setMobileOpen(true)} className="bg-gray-900 text-white rounded-full pl-4 pr-5 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.2)] flex items-center gap-2 text-sm font-bold">
+        <button onClick={() => setMobileOpen(true)} className="bg-[#2874f0] text-white rounded-full pl-4 pr-5 py-3 shadow-[0_8px_24px_rgba(40,116,240,0.3)] flex items-center gap-2 text-sm font-bold">
           <SlidersHorizontal className="h-4 w-4" /> Filters
-          {hasActiveFilters && <span className="bg-[#ff6b00] text-white text-[10px] font-bold rounded-full h-5 min-w-5 px-1.5 flex items-center justify-center">{Object.values(sp).filter(Boolean).length}</span>}
+          {hasActiveFilters && <span className="bg-[#fb641b] text-white text-[10px] font-bold rounded-full h-5 min-w-5 px-1.5 flex items-center justify-center">{Object.values(sp).filter(Boolean).length}</span>}
         </button>
         <div className="bg-white border border-gray-200 rounded-full p-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)] flex items-center gap-1">
-          <button onClick={() => setView("grid")} className={`h-8 w-8 rounded-full flex items-center justify-center ${view === "grid" ? "bg-gray-900 text-white" : "text-gray-500"}`}>
+          <button onClick={() => setView("grid")} className={`h-8 w-8 rounded-full flex items-center justify-center ${view === "grid" ? "bg-[#2874f0] text-white" : "text-gray-500"}`}>
             <LayoutGrid className="h-4 w-4" />
           </button>
-          <button onClick={() => setView("list")} className={`h-8 w-8 rounded-full flex items-center justify-center ${view === "list" ? "bg-gray-900 text-white" : "text-gray-500"}`}>
+          <button onClick={() => setView("list")} className={`h-8 w-8 rounded-full flex items-center justify-center ${view === "list" ? "bg-[#2874f0] text-white" : "text-gray-500"}`}>
             <List className="h-4 w-4" />
           </button>
         </div>
@@ -299,7 +306,7 @@ function FilterContent({
             <Link
               href={mk({ category: undefined, page: undefined })}
               onClick={onLinkClick}
-              className={`flex items-center justify-between py-2 px-2.5 rounded-xl transition ${!sp.category ? "bg-gray-900 text-white font-semibold" : "hover:bg-gray-50 text-gray-700"}`}
+              className={`flex items-center justify-between py-2 px-2.5 rounded-lg transition ${!sp.category ? "bg-[#2874f0] text-white font-semibold" : "hover:bg-gray-50 text-gray-700"}`}
             >
               All Categories
             </Link>
@@ -314,10 +321,10 @@ function FilterContent({
                   <Link
                     href={mk({ category: c.slug, page: undefined })}
                     onClick={onLinkClick}
-                    className={`flex items-center justify-between py-2 px-2.5 rounded-xl transition ${isActive ? "bg-gray-100 font-semibold text-gray-900" : "hover:bg-gray-50 text-gray-600"}`}
+                    className={`flex items-center justify-between py-2 px-2.5 rounded-lg transition ${isActive ? "bg-blue-50 font-semibold text-[#2874f0]" : "hover:bg-gray-50 text-gray-600"}`}
                   >
                     <span className="flex items-center gap-2">
-                      {c.image && <img src={c.image} alt="" className="h-5 w-5 rounded-lg object-cover" />}
+                      {c.image && <img src={c.image} alt="" className="h-5 w-5 rounded object-cover" />}
                       {c.name}
                     </span>
                     {isActive && <Check className="h-4 w-4" />}
@@ -329,7 +336,7 @@ function FilterContent({
                           <Link
                             href={mk({ category: ch.slug, page: undefined })}
                             onClick={onLinkClick}
-                            className={`block py-1.5 text-xs rounded-lg px-2.5 ${sp.category === ch.slug ? "bg-gray-900 text-white font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"}`}
+                            className={`block py-1.5 text-xs rounded-lg px-2.5 ${sp.category === ch.slug ? "bg-[#2874f0] text-white font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"}`}
                           >
                             {ch.name}
                           </Link>
@@ -345,7 +352,7 @@ function FilterContent({
 
       <Collapsible title="Availability" defaultOpen={true}>
         <Link href={mk({ inStock: sp.inStock === "1" ? undefined : "1", page: undefined })} onClick={onLinkClick} className="flex items-center gap-3 py-2 group">
-          <span className={`h-5 w-5 rounded-lg border-2 flex items-center justify-center transition ${sp.inStock === "1" ? "bg-gray-900 border-gray-900 text-white" : "border-gray-300 bg-white group-hover:border-gray-400"}`}>
+          <span className={`h-5 w-5 rounded border-2 flex items-center justify-center transition ${sp.inStock === "1" ? "bg-[#2874f0] border-[#2874f0] text-white" : "border-gray-300 bg-white group-hover:border-gray-400"}`}>
             {sp.inStock === "1" && <Check className="h-3 w-3" />}
           </span>
           <span className={`text-sm ${sp.inStock === "1" ? "font-semibold text-gray-900" : "text-gray-600"}`}>Exclude out of stock</span>
@@ -361,9 +368,9 @@ function FilterContent({
                 key={stars}
                 href={mk({ rating: active ? undefined : String(stars), page: undefined })}
                 onClick={onLinkClick}
-                className={`flex items-center gap-3 py-2 px-2.5 rounded-xl transition ${active ? "bg-gray-50" : "hover:bg-gray-50"}`}
+                className={`flex items-center gap-3 py-2 px-2.5 rounded-lg transition ${active ? "bg-blue-50" : "hover:bg-gray-50"}`}
               >
-                <span className={`h-5 w-5 rounded-lg border-2 flex items-center justify-center transition ${active ? "bg-gray-900 border-gray-900 text-white" : "border-gray-300 bg-white"}`}>
+                <span className={`h-5 w-5 rounded border-2 flex items-center justify-center transition ${active ? "bg-[#2874f0] border-[#2874f0] text-white" : "border-gray-300 bg-white"}`}>
                   {active && <Check className="h-3 w-3" />}
                 </span>
                 <span className="flex items-center gap-1 text-sm">
@@ -394,9 +401,9 @@ function FilterContent({
                 key={d.v}
                 href={mk({ discount: active ? undefined : d.v, page: undefined })}
                 onClick={onLinkClick}
-                className={`flex items-center gap-3 py-2 px-2.5 rounded-xl transition ${active ? "bg-gray-50" : "hover:bg-gray-50"}`}
+                className={`flex items-center gap-3 py-2 px-2.5 rounded-lg transition ${active ? "bg-blue-50" : "hover:bg-gray-50"}`}
               >
-                <span className={`h-5 w-5 rounded-lg border-2 flex items-center justify-center transition ${active ? "bg-gray-900 border-gray-900 text-white" : "border-gray-300 bg-white"}`}>
+                <span className={`h-5 w-5 rounded border-2 flex items-center justify-center transition ${active ? "bg-[#2874f0] border-[#2874f0] text-white" : "border-gray-300 bg-white"}`}>
                   {active && <Check className="h-3 w-3" />}
                 </span>
                 <span className={`text-sm ${active ? "font-semibold" : "text-gray-600"}`}>{d.l}</span>
@@ -424,7 +431,7 @@ function FilterContent({
               <input name="max" defaultValue={sp.max} placeholder="₹Max" className="input input-sm mt-1 rounded-full" inputMode="numeric" />
             </div>
           </div>
-          <button className="btn-primary btn-sm w-full rounded-full">Apply</button>
+          <button className="btn-primary btn-sm w-full rounded-full bg-[#2874f0]">Apply</button>
         </form>
       </Collapsible>
     </div>

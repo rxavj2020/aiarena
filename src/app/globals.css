@@ -1,16 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #0f172a;
-  --accent: #ff6b00;
-  --accent-2: #2874f0;
-  --bg: #f8f9fb;
-  --fg: #111827;
+  --primary: #2874f0;
+  --accent: #fb641b;
+  --accent-2: #ff9f00;
+  --bg: #f1f2f4;
+  --fg: #212121;
   --surface: #ffffff;
-  --border: #e5e7eb;
-  --muted: #6b7280;
-  --success: #059669;
-  --radius: 12px;
+  --border: #e0e0e0;
+  --muted: #878787;
+  --success: #388e3c;
+  --radius: 8px;
+  --gold: #d4af37;
+  --gold-light: #fff8e1;
 }
 
 @theme inline {
@@ -34,50 +36,54 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  line-height: 1.5;
 }
 
-/* Scrollbar styling like Flipkart/Amazon minimal */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+/* Scrollbar - Flipkart minimal light */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f2f4; }
+::-webkit-scrollbar-thumb { background: #c2c2c2; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #878787; }
 
 .font-display { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; }
 .container-x { @apply mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8; }
 
-/* Buttons - Amazon/Flipkart style */
-.btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none; }
-.btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none bg-gray-900 text-white hover:bg-black shadow-sm hover:shadow; }
-.btn-accent { @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none bg-[#ff6b00] text-white hover:bg-[#e65f00] shadow-sm; }
-.btn-accent-2 { @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none bg-[#2874f0] text-white hover:bg-[#1f5fd1] shadow-sm; }
-.btn-outline { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none border border-gray-200 bg-white text-gray-900 hover:border-gray-900 hover:bg-gray-50; }
-.btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none text-gray-700 hover:bg-gray-100; }
-.btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none bg-red-600 text-white hover:bg-red-700; }
+/* Buttons - Flipkart light style */
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-[2px] sm:rounded-lg px-4 py-2.5 text-sm font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none; }
+.btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none bg-[#2874f0] text-white hover:bg-[#1f5fd1] shadow-[0_1px_2px_rgba(0,0,0,0.2)] hover:shadow-md; }
+.btn-accent { @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none bg-[#fb641b] text-white hover:bg-[#e55a17] shadow-[0_1px_2px_rgba(0,0,0,0.2)] hover:shadow-md; }
+.btn-accent-2 { @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none bg-[#ff9f00] text-white hover:bg-[#e68f00] shadow-[0_1px_2px_rgba(0,0,0,0.2)]; }
+.btn-gold { @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none bg-[#d4af37] text-white hover:bg-[#c19d2e] shadow-sm; }
+.btn-outline { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none border border-[#e0e0e0] bg-white text-[#212121] hover:border-[#2874f0] hover:text-[#2874f0] hover:bg-[#f0f5ff]; }
+.btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none text-[#212121] hover:bg-[#f1f2f4]; }
+.btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer select-none bg-red-600 text-white hover:bg-red-700; }
 .btn-sm { @apply px-3 py-1.5 text-xs rounded-lg; }
-.btn-lg { @apply px-6 py-3 text-base rounded-xl; }
+.btn-lg { @apply px-6 py-3 text-base rounded-lg; }
 .btn-icon { @apply h-9 w-9 p-0 rounded-full; }
 
-/* Inputs - Flipkart style */
-.input { @apply w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/10 transition-all; }
+/* Inputs - Flipkart light */
+.input { @apply w-full rounded-lg border border-[#e0e0e0] bg-white px-3.5 py-2.5 text-sm text-[#212121] placeholder:text-[#878787] focus:border-[#2874f0] focus:outline-none focus:ring-2 focus:ring-[#2874f0]/10 transition-all; }
 .input-sm { @apply px-3 py-2 text-xs rounded-lg; }
-.label { @apply mb-1.5 block text-xs font-semibold text-gray-700 tracking-wide; }
+.label { @apply mb-1.5 block text-xs font-semibold text-[#212121] tracking-wide; }
 
-/* Cards - Elevated like Amazon */
-.card { @apply rounded-2xl border border-gray-100 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow; }
-.card-flat { @apply rounded-2xl border border-gray-200 bg-white; }
-.card-interactive { @apply rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md hover:border-gray-200 transition-all cursor-pointer; }
+/* Cards - Flipkart light */
+.card { @apply rounded-xl border border-[#e0e0e0] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-shadow; }
+.card-flat { @apply rounded-xl border border-[#e0e0e0] bg-white; }
+.card-interactive { @apply rounded-xl border border-[#e0e0e0] bg-white shadow-sm hover:shadow-md hover:border-[#c2c2c2] transition-all cursor-pointer; }
+.card-flipkart { @apply rounded-[4px] sm:rounded-xl border border-[#e0e0e0] bg-white shadow-sm; }
 
 .badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide; }
-.badge-new { @apply bg-gray-900 text-white; }
-.badge-sale { @apply bg-red-500 text-white; }
-.badge-success { @apply bg-emerald-100 text-emerald-800; }
+.badge-new { @apply bg-[#2874f0] text-white; }
+.badge-sale { @apply bg-[#ff6161] text-white; }
+.badge-success { @apply bg-[#e8f5e9] text-[#388e3c] border border-[#c8e6c9]; }
+.badge-gold { @apply bg-[#fff8e1] text-[#d4af37] border border-[#ffe082]; }
 
 /* Prose */
-.prose-store h3 { @apply mt-6 mb-2 text-base font-bold; }
-.prose-store p { @apply mb-3 leading-relaxed text-gray-700 text-[15px]; }
-.prose-store ul { @apply mb-3 list-disc pl-5 text-gray-700; }
+.prose-store h3 { @apply mt-6 mb-2 text-base font-bold text-[#212121]; }
+.prose-store p { @apply mb-3 leading-relaxed text-[#212121] text-[14px]; }
+.prose-store ul { @apply mb-3 list-disc pl-5 text-[#212121]; }
 .prose-store li { @apply mb-1.5; }
-.prose-store a { @apply underline decoration-gray-300 underline-offset-4 hover:decoration-gray-900; }
+.prose-store a { @apply text-[#2874f0] hover:underline; }
 
 /* Admin sidebar active */
 .admin-sidebar a.active { @apply bg-white/10 text-white shadow-sm; }
@@ -99,37 +105,29 @@ body {
 .shimmer::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: shimmer 1.5s infinite; }
 
 /* Toast */
-.toast { @apply fixed bottom-5 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-xl; animation: fade-up .25s ease both; }
+.toast { @apply fixed bottom-5 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-[#212121] px-5 py-2.5 text-sm font-medium text-white shadow-xl; animation: fade-up .25s ease both; }
 
 /* Tables */
 table.data { @apply w-full text-sm; }
-table.data th { @apply border-b border-gray-200 px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500; }
-table.data td { @apply border-b border-gray-50 px-3 py-3.5 align-middle; }
-table.data tr:hover td { @apply bg-gray-50/70; }
+table.data th { @apply border-b border-[#e0e0e0] px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-[#878787]; }
+table.data td { @apply border-b border-[#f1f2f4] px-3 py-3.5 align-middle; }
+table.data tr:hover td { @apply bg-[#f8f9fb]; }
 
-/* Flipkart/Amazon specific utilities */
+/* Flipkart specific */
 .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .tap-highlight-none { -webkit-tap-highlight-color: transparent; }
-
-/* Mobile app-like bottom sheet handle */
 .sheet-handle { @apply mx-auto h-1 w-10 rounded-full bg-gray-300 mb-3; }
-
-/* Focus ring for accessibility like Amazon */
-.focus-ring { @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2; }
-
-/* Product grid */
+.focus-ring { @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2874f0] focus-visible:ring-offset-2; }
 .product-grid { @apply grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4; }
 .product-grid-compact { @apply grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4 lg:grid-cols-5; }
-
-/* Filter chip */
-.filter-chip { @apply inline-flex items-center gap-1.5 rounded-full bg-gray-900 text-white px-3 py-1.5 text-xs font-medium hover:bg-black transition; }
-.filter-chip-light { @apply inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 text-gray-700 px-3 py-1.5 text-xs font-medium hover:border-gray-900 hover:text-gray-900 transition; }
-
-/* Sticky buy bar shadow like Flipkart */
+.filter-chip { @apply inline-flex items-center gap-1.5 rounded-full bg-[#2874f0] text-white px-3 py-1.5 text-xs font-medium hover:bg-[#1f5fd1] transition; }
+.filter-chip-light { @apply inline-flex items-center gap-1.5 rounded-full bg-white border border-[#e0e0e0] text-[#212121] px-3 py-1.5 text-xs font-medium hover:border-[#2874f0] hover:text-[#2874f0] transition; }
 .sticky-buy-shadow { box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
-
-/* Skeleton */
 .skeleton { @apply animate-pulse bg-gray-200 rounded; }
+
+/* Clothing & Jewellery touches */
+.jewellery-glow { box-shadow: 0 0 20px rgba(212, 175, 55, 0.15); }
+.clothing-card { @apply bg-white border border-[#e0e0e0] rounded-xl overflow-hidden hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all; }
