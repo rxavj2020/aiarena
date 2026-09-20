@@ -8,10 +8,8 @@ import {
   Heart,
   Menu,
   MapPin,
-  Search,
   ChevronDown,
   Package,
-  LogOut,
   LayoutGrid,
   X,
   Truck,
@@ -21,6 +19,7 @@ import type { StoreSettings } from "@/lib/settings";
 import type { SessionUser } from "@/lib/auth";
 import type { Category } from "@/lib/db/schema";
 import { LiveSearch } from "./LiveSearch";
+import { PincodeModal } from "./PincodeModal";
 import { useStore } from "@/lib/store/useStore";
 import { usePathname } from "next/navigation";
 
@@ -39,6 +38,7 @@ export function Header({
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [pincodeOpen, setPincodeOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => setMounted(true), []);
@@ -49,7 +49,6 @@ export function Header({
   return (
     <>
       <header className="sticky top-0 z-40 bg-white border-b border-[#e0e0e0]">
-        {/* Announcement - Flipkart blue */}
         {s.announcementEnabled && s.announcement ? (
           <div className="bg-[#2874f0] text-white text-center text-[11px] sm:text-xs py-1.5 px-4 tracking-wide font-medium flex items-center justify-center gap-2">
             <span className="hidden sm:inline">✨</span>
@@ -60,10 +59,8 @@ export function Header({
           </div>
         ) : null}
 
-        {/* Main header row - Flipkart light */}
         <div className="container-x">
           <div className="flex h-[60px] sm:h-[68px] items-center gap-3 sm:gap-6">
-            {/* Logo + Hamburger */}
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setMobileMenuOpen(true)}
@@ -91,26 +88,28 @@ export function Header({
                 )}
               </Link>
 
-              {/* Delivery pincode - Flipkart style */}
-              <div className="hidden lg:flex items-center gap-2 ml-6 pl-6 border-l border-[#e0e0e0]">
-                <MapPin className="h-4 w-4 text-[#878787]" />
+              {/* Deliver to - now functional with modal */}
+              <button
+                onClick={() => setPincodeOpen(true)}
+                className="hidden lg:flex items-center gap-2 ml-6 pl-6 border-l border-[#e0e0e0] text-left hover:opacity-80 transition"
+              >
+                <div className="h-8 w-8 rounded-full bg-[#f1f2f4] flex items-center justify-center">
+                  <MapPin className="h-4 w-4 text-[#212121]" />
+                </div>
                 <div className="text-xs leading-tight">
-                  <div className="text-[#878787]">Deliver to</div>
-                  <div className="font-semibold text-[#212121] flex items-center gap-1">
-                    {mounted && savedPincode ? savedPincode : "Select location"} <ChevronDown className="h-3 w-3" />
+                  <div className="text-[#878787] text-[11px]">Deliver to</div>
+                  <div className="font-semibold text-[#212121] flex items-center gap-1 text-[13px]">
+                    {mounted && savedPincode ? savedPincode : "Select location"} <ChevronDown className="h-3 w-3 text-[#878787]" />
                   </div>
                 </div>
-              </div>
+              </button>
             </div>
 
-            {/* Search - center expanded like Flipkart */}
             <div className="hidden md:flex flex-1 max-w-[720px] mx-4 lg:mx-8">
               <LiveSearch currency={s.currency} />
             </div>
 
-            {/* Right actions - Flipkart light */}
             <div className="flex items-center gap-1 sm:gap-2 ml-auto">
-              {/* Categories quick - desktop */}
               <Link
                 href="/categories"
                 className="hidden xl:flex items-center gap-2 px-3 py-2 rounded-full hover:bg-[#f1f2f4] text-sm font-medium text-[#212121]"
@@ -119,7 +118,6 @@ export function Header({
                 Categories
               </Link>
 
-              {/* Wishlist */}
               <Link
                 href="/wishlist"
                 className="relative flex items-center gap-2 p-2 sm:px-3 sm:py-2 rounded-full hover:bg-[#f1f2f4] transition"
@@ -136,7 +134,6 @@ export function Header({
                 <span className="hidden lg:block text-sm font-medium text-[#212121]">Wishlist</span>
               </Link>
 
-              {/* Account */}
               <div className="relative">
                 <button
                   onClick={() => setAccountOpen(!accountOpen)}
@@ -175,6 +172,9 @@ export function Header({
                           <Link href="/wishlist" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f1f2f4] text-sm text-[#212121]">
                             <Heart className="h-4 w-4" /> Wishlist ({wishlistCount})
                           </Link>
+                          <button onClick={() => setPincodeOpen(true)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f1f2f4] text-sm text-[#212121] text-left">
+                            <MapPin className="h-4 w-4" /> Delivery: {savedPincode || "Not set"}
+                          </button>
                         </div>
                       </>
                     ) : (
@@ -196,13 +196,15 @@ export function Header({
                             Help center
                           </Link>
                         </div>
+                        <button onClick={() => setPincodeOpen(true)} className="mt-3 w-full px-3 py-2 rounded-lg bg-[#f8f9fb] border text-xs text-[#212121] text-center hover:bg-[#f1f2f4]">
+                          <MapPin className="h-3 w-3 inline mr-1" /> Set delivery pincode: {savedPincode || "Not set"}
+                        </button>
                       </div>
                     )}
                   </div>
                 )}
               </div>
 
-              {/* Cart - Flipkart orange for jewellery/clothing */}
               <button
                 type="button"
                 onClick={openCart}
@@ -229,13 +231,14 @@ export function Header({
             </div>
           </div>
 
-          {/* Mobile search bar - Flipkart light */}
-          <div className="md:hidden pb-3">
+          <div className="md:hidden pb-3 space-y-2">
             <LiveSearch currency={s.currency} isMobileModal={false} />
+            <button onClick={() => setPincodeOpen(true)} className="flex items-center gap-1.5 text-xs text-[#212121] bg-[#f1f2f4] px-3 py-1.5 rounded-full w-fit">
+              <MapPin className="h-3.5 w-3.5" /> Deliver to {mounted && savedPincode ? <b>{savedPincode}</b> : "Select location"} <ChevronDown className="h-3 w-3" />
+            </button>
           </div>
         </div>
 
-        {/* Category nav bar - Flipkart light second row */}
         <div className="hidden lg:block border-t border-[#e0e0e0] bg-white">
           <div className="container-x">
             <div className="flex items-center gap-1 h-10 overflow-x-auto no-scrollbar text-[13px]">
@@ -272,7 +275,8 @@ export function Header({
         </div>
       </header>
 
-      {/* Mobile drawer - Flipkart light */}
+      <PincodeModal open={pincodeOpen} onClose={() => setPincodeOpen(false)} />
+
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-[60] lg:hidden">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
@@ -287,6 +291,13 @@ export function Header({
               </div>
               <button onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-full hover:bg-white/10">
                 <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-4 border-b border-[#f0f0f0] bg-[#f8f9fb]">
+              <button onClick={() => { setMobileMenuOpen(false); setPincodeOpen(true); }} className="flex items-center gap-2 text-sm text-[#212121] w-full text-left">
+                <MapPin className="h-4 w-4" />
+                <span>Deliver to <b>{mounted && savedPincode ? savedPincode : "Select location"}</b></span>
               </button>
             </div>
 
@@ -354,7 +365,7 @@ export function Header({
 
             <div className="p-4 border-t border-[#f0f0f0] bg-[#f8f9fb]">
               <div className="flex items-center gap-2 text-xs text-[#878787]">
-                <ShieldCheck className="h-4 w-4 text-[#388e3c]" /> Flipkart Assured · 100% Genuine
+                <ShieldCheck className="h-4 w-4 text-[#388e3c]" /> 100% Genuine · Secure Shopping
               </div>
             </div>
           </div>

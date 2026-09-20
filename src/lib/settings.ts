@@ -138,7 +138,7 @@ export const defaultSettings: StoreSettings = {
   ],
   usps: [
     { icon: "truck", title: "Free delivery", text: "On orders above ₹999" },
-    { icon: "shield", title: "100% Genuine", text: "Assured products" },
+    { icon: "shield", title: "100% Genuine", text: "Quality checked" },
     { icon: "refresh", title: "Easy returns", text: "7-day return policy" },
     { icon: "headset", title: "24/7 Support", text: "Dedicated support" },
   ],

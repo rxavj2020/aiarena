@@ -72,8 +72,8 @@ export default async function ShopPage({
               </div>
             </div>
             <div className="flex items-center gap-2 text-xs">
-              <span className="hidden sm:inline-flex items-center gap-1.5 bg-blue-50 text-[#2874f0] px-2.5 py-1 rounded-full font-medium border border-blue-100">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#2874f0] animate-pulse" /> Flipkart Assured
+              <span className="hidden sm:inline-flex items-center gap-1.5 bg-[#e8f5e9] text-[#388e3c] px-2.5 py-1 rounded-full font-bold border border-[#c8e6c9]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#388e3c] animate-pulse" /> 100% Genuine
               </span>
               <span className="inline-flex items-center gap-1 bg-gray-50 px-2.5 py-1 rounded-full font-medium border">
                 Page {res.page} of {res.pages || 1}

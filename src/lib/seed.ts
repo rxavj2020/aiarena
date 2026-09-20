@@ -82,7 +82,7 @@ export async function seed(opts?: { adminEmail?: string; adminPassword?: string 
   ];
 
   const descFor = (p: P) =>
-    `<p>${p.short}</p><p>Designed for modern celebrations, the <strong>${p.name}</strong> brings together traditional craftsmanship and contemporary style. Each piece is handcrafted by artisans and checked for quality, perfect for clothing & jewellery lovers who value authenticity.</p><h3>Details</h3><ul><li>Premium fabric / 1-year plating warranty for jewellery</li><li>Comes in beautiful gift-ready packaging</li><li>Free shipping over ₹999 · 7-day easy returns · Exchange available for jewellery</li><li>Flipkart Assured quality</li></ul>`;
+    `<p>${p.short}</p><p>Designed for modern celebrations, the <strong>${p.name}</strong> brings together traditional craftsmanship and contemporary style. Each piece is handcrafted by artisans and checked for quality, perfect for clothing & jewellery lovers who value authenticity.</p><h3>Details</h3><ul><li>Premium fabric / 1-year plating warranty for jewellery</li><li>Comes in beautiful gift-ready packaging</li><li>Free shipping over ₹999 · 7-day easy returns · Exchange available for jewellery</li><li>100% genuine quality checked</li></ul>`;
 
   const reviewers = ["Ananya R.", "Rahul M.", "Kavya S.", "Arjun P.", "Meera K.", "Dev T.", "Sneha P.", "Amit K."];
   const reviewBodies = [
@@ -146,7 +146,7 @@ export async function seed(opts?: { adminEmail?: string; adminPassword?: string 
 
   db.insert(schema.pages)
     .values([
-      { id: id("pg_"), slug: "about", title: "About us", content: "<p>We started Aurelia with a simple idea: clothing & jewellery should be beautiful, durable and fairly made. We partner with artisans across India to bring you authentic Banarasi sarees, Kundan jewellery, and everyday ethnic wear that celebrates our culture.</p><p>Every product is tested by our team before it earns a place in the collection. Flipkart Assured quality.</p>" },
+      { id: id("pg_"), slug: "about", title: "About us", content: "<p>We started Aurelia with a simple idea: clothing & jewellery should be beautiful, durable and fairly made. We partner with artisans across India to bring you authentic Banarasi sarees, Kundan jewellery, and everyday ethnic wear that celebrates our culture.</p><p>Every product is tested by our team before it earns a place in the collection. Premium quality checked.</p>" },
       { id: id("pg_"), slug: "shipping-returns", title: "Shipping & Returns", content: "<h3>Shipping</h3><p>Orders ship within 24 hours. Standard delivery 3–6 business days across India. Free shipping on orders above ₹999.</p><h3>Returns</h3><p>Clothing: 7-day easy returns. Jewellery: exchange within 7 days, lifetime plating warranty. Contact support to start a return.</p>" },
       { id: id("pg_"), slug: "privacy-policy", title: "Privacy Policy", content: "<p>We only collect information needed to process your orders. We never sell your data. Payments handled by PCI-DSS partners.</p>" },
       { id: id("pg_"), slug: "terms", title: "Terms of Service", content: "<p>Prices inclusive of GST. Jewellery images may have slight color variation due to lighting. We reserve right to cancel orders with pricing errors, with full refund.</p>" },

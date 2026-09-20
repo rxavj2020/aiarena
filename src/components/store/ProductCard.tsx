@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { formatMoney } from "@/lib/format";
-import { Star, ShoppingBag, Heart, Zap, Truck, Gem } from "lucide-react";
+import { Star, ShoppingBag, Truck, Gem } from "lucide-react";
 import type { Product } from "@/lib/db/schema";
 import { WishlistButton } from "./WishlistButton";
 import { useState, useTransition } from "react";
@@ -75,7 +75,7 @@ export function ProductCard({
                 {off > 0 && <span className="text-xs font-bold text-[#388e3c]">{off}% off</span>}
               </div>
               <div className="text-[11px] text-[#878787] flex items-center gap-1 mt-1">
-                <Truck className="h-3 w-3" /> Free delivery · <span className="text-[#2874f0] font-bold">Assured</span>
+                <Truck className="h-3 w-3" /> Free delivery
               </div>
             </div>
             <button onClick={handleQuickAdd} disabled={pending || out} className="bg-[#fb641b] hover:bg-[#e55a17] text-white text-xs font-bold px-4 py-2 rounded-full shadow-sm">
@@ -93,7 +93,6 @@ export function ProductCard({
       onMouseLeave={() => setHovered(false)}
       className="group relative flex flex-col bg-white rounded-lg border border-[#f0f0f0] hover:border-[#e0e0e0] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden transition-all duration-300"
     >
-      {/* Image */}
       <div className="relative aspect-[4/5] sm:aspect-square bg-[#f8f9fb] overflow-hidden">
         <Link href={`/products/${p.slug}`} className="block h-full w-full">
           {p.images[0] ? (
@@ -118,7 +117,6 @@ export function ProductCard({
           )}
         </Link>
 
-        {/* Badges */}
         <div className="absolute left-2 top-2 flex flex-col gap-1 z-10">
           {off > 0 && (
             <span className="bg-[#388e3c] text-white shadow-sm px-2 py-0.5 text-[11px] font-bold rounded-sm">
@@ -132,7 +130,6 @@ export function ProductCard({
           )}
         </div>
 
-        {/* Wishlist */}
         <div className="absolute right-2 top-2 z-10">
           <WishlistButton
             item={{
@@ -147,7 +144,6 @@ export function ProductCard({
           />
         </div>
 
-        {/* Quick add desktop */}
         <div
           className={`absolute bottom-2 left-2 right-2 z-10 transition-all duration-300 hidden sm:block ${
             hovered ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0 pointer-events-none"
@@ -175,7 +171,6 @@ export function ProductCard({
         )}
       </div>
 
-      {/* Info - Flipkart style */}
       <div className="p-3 flex flex-col flex-1">
         <Link href={`/products/${p.slug}`} className="group/link">
           <h3 className="text-[13px] font-medium leading-snug line-clamp-2 min-h-[36px] group-hover/link:text-[#2874f0] text-[#212121]">
@@ -187,7 +182,6 @@ export function ProductCard({
           <p className="mt-1 text-[11px] text-[#878787] line-clamp-1">{p.shortDescription}</p>
         )}
 
-        {/* Rating + assured */}
         <div className="mt-2 flex items-center gap-1.5 flex-wrap">
           {p.reviewCount ? (
             <>
@@ -199,13 +193,12 @@ export function ProductCard({
           ) : (
             <span className="text-[11px] text-[#878787]">No ratings yet</span>
           )}
-          <span className="ml-auto flex items-center gap-1 text-[10px] font-bold text-[#2874f0]">
-            <span className="h-3 w-3 rounded-full bg-[#2874f0] text-white flex items-center justify-center text-[8px] font-bold">✓</span>
-            Assured
+          <span className="ml-auto flex items-center gap-1 text-[10px] font-bold text-[#388e3c]">
+            <span className="h-3 w-3 rounded-full bg-[#e8f5e9] border border-[#c8e6c9] flex items-center justify-center text-[8px]">✓</span>
+            Genuine
           </span>
         </div>
 
-        {/* Price - Flipkart style */}
         <div className="mt-2 flex items-baseline gap-2 flex-wrap">
           <span className="font-bold text-[16px] tracking-tight text-[#212121]">{formatMoney(p.price, currency)}</span>
           {off > 0 && (
@@ -216,7 +209,6 @@ export function ProductCard({
           )}
         </div>
 
-        {/* Delivery */}
         <div className="mt-1.5 flex items-center gap-1 text-[11px] text-[#878787]">
           <Truck className="h-3 w-3" /> Free delivery
           <span className="ml-auto sm:hidden">

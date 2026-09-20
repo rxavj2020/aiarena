@@ -295,23 +295,36 @@ export function ProductForm({ product: p, variants: initialVariants = [], catego
               )}
 
               {f.variants.length > 0 && (
-                <div className="mt-6 overflow-x-auto rounded-xl border">
-                  <table className="data">
-                    <thead><tr><th>Variant</th><th>Price</th><th>SKU</th><th>Stock</th></tr></thead>
-                    <tbody>
-                      {f.variants.map((v, i) => {
-                        const up = (patch: Partial<V>) => set("variants", f.variants.map((x, k) => (k === i ? { ...x, ...patch } : x)));
-                        return (
-                          <tr key={v.title}>
-                            <td className="font-medium text-xs">{v.title}</td>
-                            <td><input type="number" step="0.01" value={v.price ?? ""} onChange={(e) => up({ price: e.target.value ? Number(e.target.value) : null })} placeholder={String(f.price)} className="input py-1 w-24 text-xs" /></td>
-                            <td><input value={v.sku ?? ""} onChange={(e) => up({ sku: e.target.value })} className="input py-1 w-28 text-xs font-mono" placeholder="SKU" /></td>
-                            <td><input type="number" value={v.stock} onChange={(e) => up({ stock: Number(e.target.value) })} className="input py-1 w-16 text-xs" /></td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <div className="mt-6 space-y-4">
+                  <div className="rounded-xl border overflow-hidden">
+                    <table className="data">
+                      <thead><tr><th>Variant</th><th>Price</th><th>SKU</th><th>Stock</th><th>Image</th></tr></thead>
+                      <tbody>
+                        {f.variants.map((v, i) => {
+                          const up = (patch: Partial<V>) => set("variants", f.variants.map((x, k) => (k === i ? { ...x, ...patch } : x)));
+                          return (
+                            <tr key={v.title}>
+                              <td className="font-medium text-xs min-w-[100px]">{v.title}</td>
+                              <td><input type="number" step="0.01" value={v.price ?? ""} onChange={(e) => up({ price: e.target.value ? Number(e.target.value) : null })} placeholder={String(f.price)} className="input py-1 w-20 text-xs" /></td>
+                              <td><input value={v.sku ?? ""} onChange={(e) => up({ sku: e.target.value })} className="input py-1 w-24 text-xs font-mono" placeholder="SKU" /></td>
+                              <td><input type="number" value={v.stock} onChange={(e) => up({ stock: Number(e.target.value) })} className="input py-1 w-14 text-xs" /></td>
+                              <td className="min-w-[120px]">
+                                <div className="flex items-center gap-2">
+                                  {v.image ? <img src={v.image} alt="" className="h-8 w-8 rounded object-cover border" /> : <div className="h-8 w-8 rounded bg-gray-100 border flex items-center justify-center text-[10px] text-gray-400">No img</div>}
+                                  <div className="flex-1">
+                                    <ImageUploader value={v.image ? [v.image] : []} onChange={(vals) => up({ image: vals[0] ?? null })} multiple={false} folder="variants" />
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="p-3 bg-[#f0f5ff] border border-[#c2d6ff] rounded-xl text-xs text-[#212121]">
+                    <b>Variant images (optional):</b> Add specific image for each variant (e.g. Red variant shows red product). If not set, main product images will be used. Perfect for clothing colors & jewellery finishes.
+                  </div>
                 </div>
               )}
             </div>

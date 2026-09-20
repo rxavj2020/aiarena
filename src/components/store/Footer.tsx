@@ -2,17 +2,16 @@ import Link from "next/link";
 import type { StoreSettings } from "@/lib/settings";
 import type { Category } from "@/lib/db/schema";
 import { Newsletter } from "./Newsletter";
-import { Link2, Truck, ShieldCheck, RefreshCw, Headphones, MapPin, Mail, Phone, ArrowRight, Gem } from "lucide-react";
+import { Link2, Truck, ShieldCheck, RefreshCw, MapPin, Mail, Phone, ArrowRight, Gem } from "lucide-react";
 
 export function Footer({ settings: s, pages, categories }: { settings: StoreSettings; pages: { slug: string; title: string }[]; categories: Category[] }) {
   return (
     <footer className="mt-12 bg-[#172337] text-white">
-      {/* Top USP - Flipkart style dark */}
       <div className="border-b border-white/10 bg-white/[0.03]">
         <div className="container-x py-4 grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
           <div className="flex items-center gap-2.5"><div className="h-8 w-8 rounded-full bg-[#fb641b]/20 flex items-center justify-center"><Truck className="h-4 w-4 text-[#fb641b]" /></div><div><div className="font-bold text-white text-xs">Free Delivery</div><div className="text-white/60 text-[11px]">On orders above ₹999</div></div></div>
-          <div className="flex items-center gap-2.5"><div className="h-8 w-8 rounded-full bg-[#388e3c]/20 flex items-center justify-center"><ShieldCheck className="h-4 w-4 text-[#388e3c]" /></div><div><div className="font-bold text-white text-xs">100% Genuine</div><div className="text-white/60 text-[11px]">Assured products</div></div></div>
-          <div className="flex items-center gap-2.5"><div className="h-8 w-8 rounded-full bg-[#2874f0]/20 flex items-center justify-center"><RefreshCw className="h-4 w-4 text-[#2874f0]" /></div><div><div className="font-bold text-white text-xs">Easy Returns</div><div className="text-white/60 text-[11px]">7 days return · Jewellery exchange</div></div></div>
+          <div className="flex items-center gap-2.5"><div className="h-8 w-8 rounded-full bg-[#388e3c]/20 flex items-center justify-center"><ShieldCheck className="h-4 w-4 text-[#388e3c]" /></div><div><div className="font-bold text-white text-xs">100% Genuine</div><div className="text-white/60 text-[11px]">Quality checked</div></div></div>
+          <div className="flex items-center gap-2.5"><div className="h-8 w-8 rounded-full bg-[#2874f0]/20 flex items-center justify-center"><RefreshCw className="h-4 w-4 text-[#2874f0]" /></div><div><div className="font-bold text-white text-xs">Easy Returns</div><div className="text-white/60 text-[11px]">7 days return & exchange</div></div></div>
           <div className="flex items-center gap-2.5"><div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center"><Gem className="h-4 w-4" /></div><div><div className="font-bold text-white text-xs">Clothing & Jewellery</div><div className="text-white/60 text-[11px]">Curated collections</div></div></div>
         </div>
       </div>
@@ -82,7 +81,7 @@ export function Footer({ settings: s, pages, categories }: { settings: StoreSett
       <div className="border-t border-white/10 bg-[#0f1a2b]">
         <div className="container-x py-5 flex flex-col sm:flex-row gap-3 items-center justify-between text-xs">
           <span className="text-white/40">{s.footerText}</span>
-          <span className="text-white/30 text-[11px] flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-[#2874f0] flex items-center justify-center text-[8px]">✓</span> Flipkart Assured · Made with ❤️ in India</span>
+          <span className="text-white/30 text-[11px] flex items-center gap-2"><span className="h-4 w-4 rounded-full bg-[#2874f0] flex items-center justify-center text-[8px]">✓</span> 100% Genuine · Made with ❤️ in India</span>
         </div>
       </div>
     </footer>
