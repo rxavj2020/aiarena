@@ -12,9 +12,11 @@ npm run dev         # http://localhost:3000
 
 | Role | URL | Login |
 |---|---|---|
-| Storefront | `/` | — |
+| SaaS landing / Studio | `/platform` | — |
+| Workspace owner signup | `/platform/signup` | — |
+| Storefront demo | `/` | — |
 | Customer demo | `/login` | customer@example.com / customer1234 |
-| **Admin console** | `/admin` | admin@example.com / admin1234 |
+| **Store admin** | `/admin` | admin@example.com / admin1234 |
 
 Change admin credentials via `ADMIN_EMAIL` / `ADMIN_PASSWORD` before the first seed, or promote any user from **Admin → Customers**. Set a strong `AUTH_SECRET` in `.env.local` (see `.env.example`).
 
@@ -55,13 +57,38 @@ Only one payment gateway can be active at a time (enabling one disables the othe
 
 ## Project layout
 ```
-src/app/(store)      storefront routes      src/lib/db          schema + auto-migrations (SQLite)
-src/app/admin        admin console          src/lib/plugins     registry, mail, payments, storage
-src/app/api          webhooks, uploads, CSV src/actions         server actions (cart, checkout, admin)
-src/components       store / admin / ui     scripts/seed.ts     demo data
+src/app/platform     SaaS control plane      src/lib/platform    tenants, workspaces, domains
+src/app/(store)      legacy storefront       src/lib/db          schema + auto-migrations (SQLite)
+src/app/site/[slug]  tenant storefront route  src/lib/plugins     registry, mail, payments, storage
+src/app/admin        store admin console      src/actions         server actions (cart, checkout, admin, platform)
+src/app/api          webhooks, uploads, CSV  src/components      platform / store / admin / ui
+scripts/seed.ts      demo data (legacy Aurelia workspace)
 ```
 
 ## Scripts
 `npm run dev` · `npm run build && npm start` · `npm run db:seed` · `npm run db:reset` · `npm run typecheck` · `npm run lint`
 
 See **DEPLOY.md** for hosting behind Cloudflare.
+
+## SaaS workspace model (new)
+
+Aurelia now has a three-layer foundation for turning the single-store demo into a multi-tenant commerce platform:
+
+| Layer | Route | Responsibility |
+|---|---|---|
+| **Aurelia Studio** | `/platform` | Subscriber onboarding, workspaces, plans, Firestore connection, brand and domain setup |
+| **Store admin** | `/admin` | Products, orders, customers, content, plugins and store operations for the active workspace |
+| **Public store** | `/site/{workspace-slug}` | The customer-facing branded storefront; verified custom domains resolve to the same tenant route |
+
+### First-time subscriber flow
+
+1. Create an owner account at `/platform/signup`.
+2. Create a workspace and choose a plan.
+3. Connect the workspace's Firebase service account. The connection is tested with a Firestore read/write request before launch.
+4. Configure the logo, brand colours and tagline.
+5. Add a custom domain. Aurelia shows the DNS record and keeps the domain pending until it is verified.
+6. Launch the public site and use the workspace's admin console.
+
+Workspace Firestore credentials are encrypted before they are written to `tenant_integrations` and are never returned to the browser. New workspaces start with an empty catalogue; no demo products, customers or orders are copied into them.
+
+The existing seeded Aurelia workspace remains available at `/`, `/admin` and `/site/aurelia` so the current demo can continue to be reviewed. For safety, a newly created workspace does not display the legacy Aurelia admin records; its admin modules stay in a provisioning state until the tenant-scoped catalogue and order repositories are wired to its Firestore collections in the next migration step.

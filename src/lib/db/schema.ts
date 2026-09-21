@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 const now = () => sql`(strftime('%Y-%m-%dT%H:%M:%fZ','now'))`;
@@ -12,6 +12,62 @@ export const users = sqliteTable("users", {
   role: text("role", { enum: ["customer", "admin"] }).notNull().default("customer"),
   createdAt: text("created_at").notNull().default(now()),
 });
+
+export const tenants = sqliteTable("tenants", {
+  id: text("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  tagline: text("tagline").notNull().default("Your store, your way"),
+  status: text("status", { enum: ["setup", "active", "paused"] }).notNull().default("setup"),
+  plan: text("plan", { enum: ["starter", "growth", "scale"] }).notNull().default("starter"),
+  logoUrl: text("logo_url"),
+  faviconUrl: text("favicon_url"),
+  primaryColor: text("primary_color").notNull().default("#151515"),
+  accentColor: text("accent_color").notNull().default("#c98b5b"),
+  createdAt: text("created_at").notNull().default(now()),
+  updatedAt: text("updated_at").notNull().default(now()),
+});
+
+export const tenantMembers = sqliteTable(
+  "tenant_members",
+  {
+    id: text("id").primaryKey(),
+    tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    role: text("role", { enum: ["owner", "admin", "editor", "support"] }).notNull().default("owner"),
+    createdAt: text("created_at").notNull().default(now()),
+  },
+  (t) => [uniqueIndex("tenant_members_unique_idx").on(t.tenantId, t.userId), index("tenant_members_tenant_idx").on(t.tenantId), index("tenant_members_user_idx").on(t.userId)]
+);
+
+export const tenantIntegrations = sqliteTable(
+  "tenant_integrations",
+  {
+    id: text("id").primaryKey(),
+    tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
+    config: text("config", { mode: "json" }).$type<Record<string, string>>().notNull().default({}),
+    lastTestAt: text("last_test_at"),
+    lastTestOk: integer("last_test_ok", { mode: "boolean" }),
+    lastTestMessage: text("last_test_message"),
+  },
+  (t) => [uniqueIndex("tenant_integrations_unique_idx").on(t.tenantId, t.provider), index("tenant_integrations_tenant_idx").on(t.tenantId)]
+);
+
+export const storeDomains = sqliteTable(
+  "store_domains",
+  {
+    id: text("id").primaryKey(),
+    tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+    hostname: text("hostname").notNull().unique(),
+    kind: text("kind", { enum: ["platform", "custom"] }).notNull().default("custom"),
+    status: text("status", { enum: ["pending", "verified", "disabled"] }).notNull().default("pending"),
+    verificationToken: text("verification_token").notNull(),
+    createdAt: text("created_at").notNull().default(now()),
+  },
+  (t) => [index("store_domains_tenant_idx").on(t.tenantId)]
+);
 
 export const addresses = sqliteTable("addresses", {
   id: text("id").primaryKey(),
@@ -198,6 +254,11 @@ export const mailLog = sqliteTable("mail_log", {
   error: text("error"),
   createdAt: text("created_at").notNull().default(now()),
 });
+
+export type Tenant = typeof tenants.$inferSelect;
+export type TenantMember = typeof tenantMembers.$inferSelect;
+export type TenantIntegration = typeof tenantIntegrations.$inferSelect;
+export type StoreDomain = typeof storeDomains.$inferSelect;
 
 export type Address = {
   name: string;

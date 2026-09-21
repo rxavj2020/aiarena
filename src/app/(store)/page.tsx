@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { getSettings } from "@/lib/settings";
 import { featuredProducts, newestProducts, listCategories, categoryProductCounts, queryProducts } from "@/lib/catalog";
+import { getTenantByHost } from "@/lib/platform";
 import { ProductCard } from "@/components/store/ProductCard";
 import { RecentlyViewed } from "@/components/store/RecentlyViewed";
 import { ArrowRight, Truck, ShieldCheck, RefreshCw, Headphones, Sparkles, Zap, ChevronRight, Gem } from "lucide-react";
@@ -9,6 +12,9 @@ import { HeroBanners } from "@/components/store/HeroBanners";
 const icons: Record<string, React.ComponentType<{ className?: string }>> = { truck: Truck, shield: ShieldCheck, refresh: RefreshCw, headset: Headphones, sparkles: Sparkles };
 
 export default async function HomePage() {
+  const host = (await headers()).get("host");
+  const tenant = host ? getTenantByHost(host) : null;
+  if (tenant) redirect(`/site/${tenant.slug}`);
   const s = await getSettings();
   const [featured, newest, cats, counts, deals] = [
     featuredProducts(8),

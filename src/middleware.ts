@@ -4,4 +4,4 @@ export function middleware(req: NextRequest) {
   h.set("x-pathname", req.nextUrl.pathname);
   return NextResponse.next({ request: { headers: h } });
 }
-export const config = { matcher: ["/admin/:path*"] };
+export const config = { matcher: ["/admin/:path*", "/platform", "/platform/:path*"] };

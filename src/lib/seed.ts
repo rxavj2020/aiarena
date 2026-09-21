@@ -1,5 +1,5 @@
 import { db, schema } from "@/lib/db";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { id, slugify } from "@/lib/utils";
 
@@ -12,10 +12,14 @@ export function isSeeded() {
 }
 
 export async function seed(opts?: { adminEmail?: string; adminPassword?: string }) {
-  const adminEmail = opts?.adminEmail ?? process.env.ADMIN_EMAIL ?? "admin@example.com";
+  const adminEmail = (opts?.adminEmail ?? process.env.ADMIN_EMAIL ?? "admin@example.com").toLowerCase().trim();
   const adminPassword = opts?.adminPassword ?? process.env.ADMIN_PASSWORD ?? "admin1234";
   const pw = await bcrypt.hash(adminPassword, 10);
   db.insert(schema.users).values({ id: id("usr_"), email: adminEmail, passwordHash: pw, name: "Store Admin", role: "admin" }).onConflictDoNothing().run();
+  const admin = db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.email, adminEmail)).get();
+  if (admin && !db.select({ id: schema.tenantMembers.id }).from(schema.tenantMembers).where(eq(schema.tenantMembers.userId, admin.id)).get()) {
+    db.insert(schema.tenantMembers).values({ id: id("mem_"), tenantId: "tenant_aurelia", userId: admin.id, role: "owner" }).run();
+  }
   const demoPw = await bcrypt.hash("customer1234", 10);
   const customerId = id("usr_");
   db.insert(schema.users).values({ id: customerId, email: "customer@example.com", passwordHash: demoPw, name: "Priya Sharma", phone: "+91 98765 12345", role: "customer" }).onConflictDoNothing().run();

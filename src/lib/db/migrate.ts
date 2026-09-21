@@ -6,6 +6,38 @@ export function ensureSchema(sqlite: Database.Database) {
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, name TEXT NOT NULL, phone TEXT,
   role TEXT NOT NULL DEFAULT 'customer', created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
+CREATE TABLE IF NOT EXISTS tenants (
+  id TEXT PRIMARY KEY, slug TEXT NOT NULL UNIQUE, name TEXT NOT NULL,
+  tagline TEXT NOT NULL DEFAULT 'Your store, your way', status TEXT NOT NULL DEFAULT 'setup',
+  plan TEXT NOT NULL DEFAULT 'starter', logo_url TEXT, favicon_url TEXT,
+  primary_color TEXT NOT NULL DEFAULT '#151515', accent_color TEXT NOT NULL DEFAULT '#c98b5b',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE TABLE IF NOT EXISTS tenant_members (
+  id TEXT PRIMARY KEY, tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, role TEXT NOT NULL DEFAULT 'owner',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS tenant_members_unique_idx ON tenant_members(tenant_id, user_id);
+CREATE INDEX IF NOT EXISTS tenant_members_tenant_idx ON tenant_members(tenant_id);
+CREATE INDEX IF NOT EXISTS tenant_members_user_idx ON tenant_members(user_id);
+CREATE TABLE IF NOT EXISTS tenant_integrations (
+  id TEXT PRIMARY KEY, tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 0, config TEXT NOT NULL DEFAULT '{}',
+  last_test_at TEXT, last_test_ok INTEGER, last_test_message TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS tenant_integrations_unique_idx ON tenant_integrations(tenant_id, provider);
+CREATE INDEX IF NOT EXISTS tenant_integrations_tenant_idx ON tenant_integrations(tenant_id);
+CREATE TABLE IF NOT EXISTS store_domains (
+  id TEXT PRIMARY KEY, tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  hostname TEXT NOT NULL UNIQUE, kind TEXT NOT NULL DEFAULT 'custom', status TEXT NOT NULL DEFAULT 'pending',
+  verification_token TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS store_domains_tenant_idx ON store_domains(tenant_id);
+INSERT OR IGNORE INTO tenants (id, slug, name, tagline, status, plan, primary_color, accent_color)
+VALUES ('tenant_aurelia', 'aurelia', 'Aurelia', 'Clothing & Jewellery · Crafted for you', 'active', 'growth', '#2874f0', '#fb641b');
 CREATE TABLE IF NOT EXISTS addresses (
   id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, label TEXT DEFAULT 'Home',
   name TEXT NOT NULL, phone TEXT NOT NULL, line1 TEXT NOT NULL, line2 TEXT, city TEXT NOT NULL, state TEXT NOT NULL,

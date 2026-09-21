@@ -64,6 +64,8 @@ body {
 /* Inputs - Flipkart light */
 .input { @apply w-full rounded-lg border border-[#e0e0e0] bg-white px-3.5 py-2.5 text-sm text-[#212121] placeholder:text-[#878787] focus:border-[#2874f0] focus:outline-none focus:ring-2 focus:ring-[#2874f0]/10 transition-all; }
 .input-sm { @apply px-3 py-2 text-xs rounded-lg; }
+.field { @apply w-full rounded-xl border border-black/10 bg-[#fafaf8] px-3.5 py-3 text-sm text-[#181817] outline-none transition placeholder:text-black/25 focus:border-black/40 focus:ring-2 focus:ring-black/5; }
+.dark-field { @apply w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-[#e9c78d] focus:ring-2 focus:ring-[#e9c78d]/10; }
 .label { @apply mb-1.5 block text-xs font-semibold text-[#212121] tracking-wide; }
 
 /* Cards - Flipkart light */

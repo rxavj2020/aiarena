@@ -1,5 +1,6 @@
 "use client";
 import { useActionState } from "react";
+import Link from "next/link";
 import { loginAction } from "@/actions/auth";
 export default function AdminLogin() {
   const [state, action, pending] = useActionState(loginAction, undefined);
@@ -13,6 +14,7 @@ export default function AdminLogin() {
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
         <button className="btn-primary w-full py-2.5" disabled={pending}>Sign in</button>
         <p className="text-[11px] text-gray-400 text-center">Default: admin@example.com / admin1234</p>
+        <p className="text-center text-xs text-gray-500">Building a new store? <Link href="/platform/signup" className="font-semibold text-gray-900 hover:underline">Create a workspace</Link></p>
       </form>
     </div>
   );

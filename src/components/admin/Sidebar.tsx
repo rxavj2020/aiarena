@@ -44,7 +44,7 @@ const nav: NavEntry[] = [
   { href: "/admin/mail-log", label: "Mail log", icon: Mail },
 ];
 
-export function Sidebar({ storeName, pendingOrders, pendingReviews }: { storeName: string; pendingOrders: number; pendingReviews: number }) {
+export function Sidebar({ storeName, publicHref, pendingOrders, pendingReviews }: { storeName: string; publicHref: string; pendingOrders: number; pendingReviews: number }) {
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -62,7 +62,7 @@ export function Sidebar({ storeName, pendingOrders, pendingReviews }: { storeNam
           <Link href="/admin/products/new" className="flex-1 bg-white text-gray-900 text-xs font-bold px-3 py-2 rounded-full flex items-center justify-center gap-1 hover:bg-gray-100">
             <Plus className="h-3.5 w-3.5" /> New product
           </Link>
-          <a href="/" target="_blank" className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
+          <a href={publicHref} target="_blank" className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
             <ExternalLink className="h-4 w-4 text-white" />
           </a>
         </div>
@@ -91,9 +91,13 @@ export function Sidebar({ storeName, pendingOrders, pendingReviews }: { storeNam
       </nav>
 
       <div className="p-3 border-t border-white/10 space-y-0.5 text-sm hidden lg:block">
-        <a href="/" target="_blank" className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 hover:bg-white/5 hover:text-white text-gray-400">
+        <Link href="/platform" className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 hover:bg-white/5 hover:text-white text-gray-400">
+          <LayoutDashboard className="h-4 w-4" />
+          Workspace setup
+        </Link>
+        <a href={publicHref} target="_blank" className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 hover:bg-white/5 hover:text-white text-gray-400">
           <ExternalLink className="h-4 w-4" />
-          View store
+          View public site
         </a>
         <form action={adminLogout}>
           <button className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 hover:bg-white/5 hover:text-white text-gray-400">
@@ -130,7 +134,7 @@ export function Sidebar({ storeName, pendingOrders, pendingReviews }: { storeNam
             <Link href="/admin/products/new" className="h-9 w-9 rounded-full bg-white text-gray-900 flex items-center justify-center">
               <Plus className="h-5 w-5" />
             </Link>
-            <a href="/" target="_blank" className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center">
+            <a href={publicHref} target="_blank" className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center">
               <ExternalLink className="h-4 w-4" />
             </a>
           </div>
