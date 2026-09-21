@@ -89,6 +89,6 @@ Aurelia now has a three-layer foundation for turning the single-store demo into 
 5. Add a custom domain. Aurelia shows the DNS record and keeps the domain pending until it is verified.
 6. Launch the public site and use the workspace's admin console.
 
-Workspace Firestore credentials are encrypted before they are written to `tenant_integrations` and are never returned to the browser. New workspaces start with an empty catalogue; no demo products, customers or orders are copied into them.
+Workspace Firestore credentials are encrypted before they are written to `tenant_integrations` and are never returned to the browser. New workspaces start with an empty catalogue; no demo products, customers or orders are copied into them. The subscriber product builder writes to a collection prefix that always includes the workspace slug, even when two stores use the same Firebase project.
 
-The existing seeded Aurelia workspace remains available at `/`, `/admin` and `/site/aurelia` so the current demo can continue to be reviewed. For safety, a newly created workspace does not display the legacy Aurelia admin records; its admin modules stay in a provisioning state until the tenant-scoped catalogue and order repositories are wired to its Firestore collections in the next migration step.
+The existing seeded Aurelia workspace remains available at `/`, `/admin` and `/site/aurelia` so the current demo can continue to be reviewed. For safety, a newly created workspace never displays the legacy Aurelia records. Its tenant-safe admin starts with a Firestore-backed product builder; orders, customers, content and the remaining plugins can be added to the same tenant repository without changing the public/store boundary.

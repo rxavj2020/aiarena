@@ -44,9 +44,10 @@ const nav: NavEntry[] = [
   { href: "/admin/mail-log", label: "Mail log", icon: Mail },
 ];
 
-export function Sidebar({ storeName, publicHref, pendingOrders, pendingReviews }: { storeName: string; publicHref: string; pendingOrders: number; pendingReviews: number }) {
+export function Sidebar({ storeName, publicHref, pendingOrders, pendingReviews, tenantWorkspace = false }: { storeName: string; publicHref: string; pendingOrders: number; pendingReviews: number; tenantWorkspace?: boolean }) {
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const visibleNav = tenantWorkspace ? nav.filter((item) => "href" in item && ["/admin", "/admin/products"].includes(item.href)) : nav;
 
   const NavContent = () => (
     <>
@@ -69,7 +70,7 @@ export function Sidebar({ storeName, publicHref, pendingOrders, pendingReviews }
       </div>
 
       <nav className="flex-1 overflow-y-auto p-3 space-y-0.5 text-sm">
-        {nav.map((n, i) =>
+        {visibleNav.map((n, i) =>
           "section" in n ? (
             <div key={i} className="px-3 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-500 hidden lg:block">
               {n.section}
@@ -165,7 +166,7 @@ export function Sidebar({ storeName, publicHref, pendingOrders, pendingReviews }
       {/* Mobile bottom nav - like mobile app */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="flex items-center justify-around px-2 py-1.5">
-          {nav
+          {visibleNav
             .filter((n): n is NavItem => !("section" in n) && !!(n as NavItem).mobile)
             .slice(0, 5)
             .map((n) => {

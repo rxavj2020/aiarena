@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { getPluginState } from "./store";
-import { db, schema } from "@/lib/db";
+import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
 
 /**
@@ -11,7 +11,8 @@ import { sql } from "drizzle-orm";
  *  - restoreFromFirestore(): rebuild SQLite from Firestore
  */
 
-type Cfg = Record<string, string>;
+export type FirestoreConfig = Record<string, string>;
+type Cfg = FirestoreConfig;
 const SYNCED_TABLES = ["users", "addresses", "categories", "products", "variants", "orders", "order_items", "order_events", "coupons", "reviews", "pages", "settings", "plugins", "subscribers"] as const;
 export type SyncedTable = (typeof SYNCED_TABLES)[number];
 const PK: Record<string, string> = { settings: "key" };
@@ -69,6 +70,22 @@ async function fsFetch(c: Cfg, path: string, init?: RequestInit) {
   const r = await fetch(path.startsWith("http") ? path : `${base(c)}${path}`, { ...init, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init?.headers ?? {}) } });
   if (!r.ok) throw new Error(`Firestore ${r.status}: ${(await r.text()).slice(0, 300)}`);
   return r.json();
+}
+
+/** Tenant-safe document primitives used by the workspace admin. */
+export async function listFirestoreDocuments(c: FirestoreConfig, table: string) {
+  return listAll(c, table);
+}
+
+export async function upsertFirestoreDocument(c: FirestoreConfig, table: string, documentId: string, fields: Record<string, unknown>) {
+  return fsFetch(c, `/${coll(c, table)}/${encodeURIComponent(documentId)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ fields: Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, enc(value)])) }),
+  });
+}
+
+export async function deleteFirestoreDocument(c: FirestoreConfig, table: string, documentId: string) {
+  return fsFetch(c, `/${coll(c, table)}/${encodeURIComponent(documentId)}`, { method: "DELETE" });
 }
 
 function isActive() {

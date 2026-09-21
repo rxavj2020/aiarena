@@ -107,7 +107,7 @@ export async function connectWorkspaceFirestore(tenantId: string, input: Firesto
     else db.insert(schema.tenantIntegrations).values({ id: id("int_"), ...row }).run();
     revalidatePath(`/platform/stores/${getTenantById(tenantId)?.slug ?? ""}`);
     revalidatePath("/platform");
-    return { ok: true, message: "Firestore connected — your data is ready for sync" };
+    return { ok: true, message: "Firestore connected — your workspace data is ready" };
   });
 }
 

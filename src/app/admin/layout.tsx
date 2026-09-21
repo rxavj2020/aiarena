@@ -2,7 +2,7 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { Sidebar } from "@/components/admin/Sidebar";
-import { WorkspaceProvisioning } from "@/components/admin/WorkspaceProvisioning";
+import { TenantAdminWorkspace } from "@/components/admin/TenantAdminWorkspace";
 import { ToastProvider } from "@/components/ui/Toast";
 import { getSettings } from "@/lib/settings";
 import { db, schema } from "@/lib/db";
@@ -24,13 +24,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const set = await getSettings();
   const current = (await getCurrentWorkspace()).tenant;
   const workspace = current ? current : (await requireWorkspaceAccess(DEFAULT_TENANT_ID)).tenant;
-  const pendingOrders = db.select({ n: sql<number>`count(*)` }).from(schema.orders).where(sql`status in ('pending','confirmed')`).get()?.n ?? 0;
-  const pendingReviews = db.select({ n: sql<number>`count(*)` }).from(schema.reviews).where(eq(schema.reviews.approved, false)).get()?.n ?? 0;
-  const workspaceContent = workspace.id === DEFAULT_TENANT_ID ? children : <WorkspaceProvisioning tenant={workspace} firestoreConnected={workspaceSetup(workspace.id).firestoreConnected} />;
+  const isLegacyWorkspace = workspace.id === DEFAULT_TENANT_ID;
+  const pendingOrders = isLegacyWorkspace ? db.select({ n: sql<number>`count(*)` }).from(schema.orders).where(sql`status in ('pending','confirmed')`).get()?.n ?? 0 : 0;
+  const pendingReviews = isLegacyWorkspace ? db.select({ n: sql<number>`count(*)` }).from(schema.reviews).where(eq(schema.reviews.approved, false)).get()?.n ?? 0 : 0;
+  const workspaceContent = isLegacyWorkspace ? children : <TenantAdminWorkspace tenant={workspace} firestoreConnected={workspaceSetup(workspace.id).firestoreConnected} />;
   return (
     <ToastProvider>
       <div className="flex min-h-screen bg-[#f8f9fb]">
-        <Sidebar storeName={workspace.name || set.storeName} publicHref={`/site/${workspace.slug}`} pendingOrders={pendingOrders} pendingReviews={pendingReviews} />
+        <Sidebar storeName={workspace.name || set.storeName} publicHref={`/site/${workspace.slug}`} pendingOrders={pendingOrders} pendingReviews={pendingReviews} tenantWorkspace={!isLegacyWorkspace} />
         <main className="flex-1 min-w-0 p-4 lg:p-8 pb-20 lg:pb-8 pt-[72px] lg:pt-8">{workspaceContent}</main>
       </div>
     </ToastProvider>
