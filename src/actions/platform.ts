@@ -45,8 +45,7 @@ const firestoreSchema = z.object({
   databaseId: z.string().trim().default("(default)"),
   clientEmail: z.string().trim().email("Use the service account client email"),
   privateKey: z.string().trim().min(80, "Paste the full private key"),
-  collectionPrefix: z.string().trim().regex(/^[a-zA-Z0-9_-]+$/, "Use letters, numbers, hyphens or underscores").default("store_") ,
-  autoSyncMinutes: z.coerce.number().int().min(0).max(1440).default(0),
+  collectionPrefix: z.string().trim().regex(/^[a-zA-Z0-9_-]+$/, "Use letters, numbers, hyphens or underscores").default("store_"),
 });
 
 export type FirestoreInput = z.infer<typeof firestoreSchema>;
@@ -82,10 +81,16 @@ export async function saveWorkspaceBranding(tenantId: string, input: { name: str
 
 export async function connectWorkspaceFirestore(tenantId: string, input: FirestoreInput): Promise<PlatformResult> {
   return wrap(async () => {
-    await requireWorkspaceAccess(tenantId);
+    const { tenant } = await requireWorkspaceAccess(tenantId);
     const parsed = firestoreSchema.safeParse(input);
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-    const config: Record<string, string> = { ...parsed.data, databaseId: parsed.data.databaseId || "(default)", autoSyncMinutes: String(parsed.data.autoSyncMinutes) };
+    // Always namespace collections with the workspace slug. A user-selected prefix alone
+    // could otherwise let two workspaces share collections in the same Firebase project.
+    const config: Record<string, string> = {
+      ...parsed.data,
+      databaseId: parsed.data.databaseId || "(default)",
+      collectionPrefix: `${parsed.data.collectionPrefix}${tenant.slug}_`,
+    };
     const message = await testFirestore(config);
     const existing = db.select().from(schema.tenantIntegrations).where(and(eq(schema.tenantIntegrations.tenantId, tenantId), eq(schema.tenantIntegrations.provider, "firestore"))).get();
     const row = {
@@ -119,14 +124,22 @@ export async function launchWorkspace(tenantId: string): Promise<PlatformResult>
 
 export async function connectWorkspaceDomain(tenantId: string, hostname: string): Promise<PlatformResult> {
   return wrap(async () => {
-    await requireWorkspaceAccess(tenantId);
+    const { tenant } = await requireWorkspaceAccess(tenantId);
     const clean = hostname.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "");
     if (!clean || !clean.includes(".") || clean.includes(" ")) return { ok: false, error: "Enter a valid domain such as shop.example.com" };
+    if (clean === "aurelia.app" || clean.endsWith(".aurelia.app")) return { ok: false, error: "Use a domain you own; Aurelia URLs are managed automatically" };
     const existing = db.select().from(schema.storeDomains).where(eq(schema.storeDomains.hostname, clean)).get();
     if (existing && existing.tenantId !== tenantId) return { ok: false, error: "That domain is already linked to another store" };
-    if (existing) db.update(schema.storeDomains).set({ status: "pending" }).where(eq(schema.storeDomains.id, existing.id)).run();
-    else db.insert(schema.storeDomains).values({ id: id("dom_"), tenantId, hostname: clean, kind: "custom", status: "pending", verificationToken: `aurelia-site=${id("verify_")}` }).run();
-    revalidatePath(`/platform/stores/${getTenantById(tenantId)?.slug ?? ""}`);
+    const currentCustom = db.select().from(schema.storeDomains).where(and(eq(schema.storeDomains.tenantId, tenantId), eq(schema.storeDomains.kind, "custom"))).get();
+    if (existing) {
+      if (existing.kind !== "custom") return { ok: false, error: "That hostname is managed by Aurelia" };
+      db.update(schema.storeDomains).set({ status: "pending" }).where(eq(schema.storeDomains.id, existing.id)).run();
+    } else if (currentCustom) {
+      db.update(schema.storeDomains).set({ hostname: clean, status: "pending", verificationToken: `aurelia-site=${id("verify_")}` }).where(eq(schema.storeDomains.id, currentCustom.id)).run();
+    } else {
+      db.insert(schema.storeDomains).values({ id: id("dom_"), tenantId, hostname: clean, kind: "custom", status: "pending", verificationToken: `aurelia-site=${id("verify_")}` }).run();
+    }
+    revalidatePath(`/platform/stores/${tenant.slug}`);
     return { ok: true, message: "Domain saved — add the DNS record shown below to verify it" };
   });
 }

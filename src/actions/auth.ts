@@ -5,14 +5,18 @@ import { z } from "zod";
 
 export type AuthState = { error?: string } | undefined;
 
+function safeNext(value: string, fallback: string) {
+  return value.startsWith("/") && !value.startsWith("//") ? value : fallback;
+}
+
 export async function loginAction(_: AuthState, formData: FormData): Promise<AuthState> {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "");
+  const requestedNext = String(formData.get("next") ?? "");
   const user = await verifyCredentials(email, password);
   if (!user) return { error: "Invalid email or password" };
   await createSession({ id: user.id, email: user.email, name: user.name, role: user.role });
-  redirect(next || (user.role === "admin" ? "/admin" : "/account"));
+  redirect(safeNext(requestedNext, user.role === "admin" ? "/admin" : "/account"));
 }
 
 const registerSchema = z.object({ name: z.string().min(2, "Name is too short"), email: z.string().email("Enter a valid email"), password: z.string().min(8, "Password must be at least 8 characters") });
@@ -26,7 +30,7 @@ export async function registerAction(_: AuthState, formData: FormData): Promise<
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Registration failed" };
   }
-  redirect(String(formData.get("next") || "/account"));
+  redirect(safeNext(String(formData.get("next") || ""), "/account"));
 }
 
 /** Separate owner signup so public shoppers can never self-register as store admins. */
