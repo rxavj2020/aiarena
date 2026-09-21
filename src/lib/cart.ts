@@ -6,12 +6,18 @@ import { and, gt, lte, or, isNull, sql } from "drizzle-orm";
 
 export type CartLine = { productId: string; variantId?: string; qty: number };
 
+/**
+ * Carts are namespaced per website. The legacy demo store keeps the original
+ * `cart` cookie; every tenant website gets its own `cart_{tenantId}` cookie so
+ * two websites never share a bag.
+ */
 const COOKIE = "cart";
+const cookieFor = (tenantId?: string | null) => (tenantId ? `${COOKIE}_${tenantId}` : COOKIE);
 
-export async function readCart(): Promise<CartLine[]> {
+export async function readCart(tenantId?: string | null): Promise<CartLine[]> {
   const c = await cookies();
   try {
-    const raw = c.get(COOKIE)?.value;
+    const raw = c.get(cookieFor(tenantId))?.value;
     if (!raw) return [];
     const parsed = JSON.parse(raw) as CartLine[];
     return Array.isArray(parsed) ? parsed.filter((l) => l && l.productId && l.qty > 0) : [];
@@ -20,9 +26,9 @@ export async function readCart(): Promise<CartLine[]> {
   }
 }
 
-export async function writeCart(lines: CartLine[]) {
+export async function writeCart(lines: CartLine[], tenantId?: string | null) {
   const c = await cookies();
-  c.set(COOKIE, JSON.stringify(lines), { path: "/", maxAge: 60 * 60 * 24 * 30, sameSite: "lax" });
+  c.set(cookieFor(tenantId), JSON.stringify(lines), { path: "/", maxAge: 60 * 60 * 24 * 30, sameSite: "lax" });
 }
 
 export type ResolvedLine = {
@@ -40,11 +46,11 @@ export type ResolvedLine = {
   sku?: string | null;
 };
 
-export async function resolveCart(lines?: CartLine[]) {
-  const raw = lines ?? (await readCart());
+export async function resolveCart(lines?: CartLine[], tenantId?: string | null) {
+  const raw = lines ?? (await readCart(tenantId));
   if (!raw.length) return [] as ResolvedLine[];
   const ids = [...new Set(raw.map((l) => l.productId))];
-  const products = db.select().from(schema.products).where(and(inArray(schema.products.id, ids), eq(schema.products.status, "active"))).all();
+  const products = db.select().from(schema.products).where(tenantId ? and(inArray(schema.products.id, ids), eq(schema.products.status, "active"), eq(schema.products.tenantId, tenantId)) : and(inArray(schema.products.id, ids), eq(schema.products.status, "active"))).all();
   const variantIds = raw.map((l) => l.variantId).filter(Boolean) as string[];
   const variants = variantIds.length ? db.select().from(schema.variants).where(inArray(schema.variants.id, variantIds)).all() : [];
   const out: ResolvedLine[] = [];

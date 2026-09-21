@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { razorpayVerifySignature } from "@/lib/plugins/payments";
 import { markOrderPaid } from "@/lib/orders";
-import { writeCart } from "@/lib/cart";
+import { clearOrderCart } from "@/lib/tenant-site";
 import { db, schema } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
@@ -15,6 +15,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
   await markOrderPaid(b.orderId, "razorpay", b.razorpay_payment_id);
-  await writeCart([]);
+  await clearOrderCart(b.orderId);
   return NextResponse.json({ ok: true });
 }

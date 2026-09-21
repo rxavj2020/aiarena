@@ -29,20 +29,21 @@ export type CheckoutResult =
   | { ok: true; kind: "razorpay"; orderId: string; gatewayOrderId: string; keyId: string; amount: number; currency: string; name: string; email: string; phone: string; themeColor?: string; storeName: string }
   | { ok: true; kind: "cashfree"; orderId: string; paymentSessionId: string; mode: string };
 
-export async function validateCoupon(code: string) {
-  const lines = await resolveCart();
+export async function validateCoupon(code: string, tenantId?: string | null) {
+  const lines = await resolveCart(undefined, tenantId);
   const t = await computeTotals(lines, code);
   return t.couponError ? { ok: false as const, error: t.couponError } : { ok: true as const, discount: t.discount };
 }
 
-export async function placeOrder(input: { email: string; address: z.infer<typeof addressSchema>; paymentMethod: "cod" | "online"; couponCode?: string; note?: string; saveAddress?: boolean }): Promise<CheckoutResult> {
+export async function placeOrder(input: { email: string; address: z.infer<typeof addressSchema>; paymentMethod: "cod" | "online"; couponCode?: string; note?: string; saveAddress?: boolean; tenantId?: string | null; base?: string }): Promise<CheckoutResult> {
   const s = await getSettings();
   const session = await getSession();
+  const tenantId = input.tenantId ?? null;
   const email = z.string().email().safeParse(input.email);
   if (!email.success) return { ok: false, error: "Enter a valid email address" };
   const addr = addressSchema.safeParse(input.address);
   if (!addr.success) return { ok: false, error: addr.error.issues[0].message };
-  const lines = await resolveCart();
+  const lines = await resolveCart(undefined, tenantId);
   if (!lines.length) return { ok: false, error: "Your cart is empty" };
   for (const l of lines) if (l.trackStock && l.qty > l.stock) return { ok: false, error: `${l.name} only has ${l.stock} in stock` };
 
@@ -59,6 +60,7 @@ export async function placeOrder(input: { email: string; address: z.infer<typeof
     .values({
       id: orderId,
       orderNumber,
+      tenantId: tenantId ?? undefined,
       userId: session?.id ?? null,
       email: email.data.toLowerCase(),
       phone: addr.data.phone,
@@ -88,7 +90,7 @@ export async function placeOrder(input: { email: string; address: z.infer<typeof
   if (input.paymentMethod === "cod") {
     db.update(schema.orders).set({ status: "confirmed" }).where(eq(schema.orders.id, orderId)).run();
     decrementStock(orderId);
-    await writeCart([]);
+    await writeCart([], tenantId);
     notifyNewOrder(orderId).catch(() => {});
     return { ok: true, kind: "cod", orderId };
   }
@@ -101,7 +103,7 @@ export async function placeOrder(input: { email: string; address: z.infer<typeof
       db.update(schema.orders).set({ paymentRef: r.gatewayOrderId }).where(eq(schema.orders.id, orderId)).run();
       return { ok: true, kind: "razorpay", orderId, gatewayOrderId: r.gatewayOrderId, keyId: r.keyId, amount: t.total, currency: s.currency, name: addr.data.name, email: email.data, phone: addr.data.phone, themeColor: r.themeColor, storeName: s.storeName };
     }
-    const r = await cashfreeCreateOrder({ orderId, amount: t.total, currency: s.currency, customer: { id: session?.id ?? "guest_" + orderNumber, email: email.data, phone: addr.data.phone, name: addr.data.name }, returnUrl: `${origin}/api/payments/cashfree/return?order_id=${orderId}`, notifyUrl: `${origin}/api/webhooks/cashfree` });
+    const r = await cashfreeCreateOrder({ orderId, amount: t.total, currency: s.currency, customer: { id: session?.id ?? "guest_" + orderNumber, email: email.data, phone: addr.data.phone, name: addr.data.name }, returnUrl: `${origin}/api/payments/cashfree/return?order_id=${orderId}&base=${encodeURIComponent(input.base ?? "")}`, notifyUrl: `${origin}/api/webhooks/cashfree` });
     db.update(schema.orders).set({ paymentRef: r.cfOrderId }).where(eq(schema.orders.id, orderId)).run();
     return { ok: true, kind: "cashfree", orderId, paymentSessionId: r.paymentSessionId, mode: r.mode };
   } catch (e) {

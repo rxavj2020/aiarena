@@ -24,6 +24,8 @@ export const tenants = sqliteTable("tenants", {
   faviconUrl: text("favicon_url"),
   primaryColor: text("primary_color").notNull().default("#151515"),
   accentColor: text("accent_color").notNull().default("#c98b5b"),
+  /** JSON TenantTheme (preset, font, radius, default appearance). See src/lib/themes.ts */
+  theme: text("theme", { mode: "json" }).$type<Record<string, unknown> | null>().default(null),
   createdAt: text("created_at").notNull().default(now()),
   updatedAt: text("updated_at").notNull().default(now()),
 });
