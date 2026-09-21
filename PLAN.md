@@ -16,7 +16,7 @@ Working branch: `arena/01a0c434-aiarena` (do **not** merge to `main` until the o
 - The platform appears on a tenant site only as a small footer attribution opening in a new tab — never part of navigation.
 
 ### 2. Theme system (persists through that website's all pages)
-- **Owner layer** — `TenantTheme` (preset, brand colours, font, radius, default appearance) stored on the tenant record and applied via CSS variables on every page of that website only. Presets: Minimal, Vivid, Elegant, Noir, Organic.
+- **Owner layer** — `TenantTheme` (preset, brand colours, font, radius, default appearance) stored on the tenant record and applied via CSS variables on every page of that website only. Palette kinds: **two-colour** (primary + accent, solid surfaces) and **three-colour** (primary + accent + tertiary — trending tri-colour gradients on heroes, buttons and accent stripes). Presets: Minimal, Vivid, Elegant, Noir, Organic (duo) + Sunset Glow, Aurora, Candy Pop, Bazaar (trio).
 - **Visitor layer** — Light / Dark / System appearance toggle in the site header. Persisted in an `appearance` cookie whose `Path` is scoped to the website (`/store/[slug]`), so the choice survives navigation on that site only and never affects other websites or the platform.
 
 ### 3. Tenant-scoped commerce

@@ -140,10 +140,12 @@ export function DashboardClient({
     theme: {
       preset: theme.preset,
       appearance: theme.appearance,
+      colorMode: theme.colorMode,
       radius: theme.radius,
       font: theme.font,
       primaryColor: theme.primaryColor,
       accentColor: theme.accentColor,
+      tertiaryColor: theme.tertiaryColor,
     },
   });
   const setThemeForm = (patch: Partial<ThemeFormValue>) =>
@@ -152,9 +154,9 @@ export function DashboardClient({
       return {
         ...f,
         theme: nextTheme,
-        // Colours live in one place: the theme. Keep the swatches in sync.
-        primaryColor: patch.primaryColor ? patch.primaryColor : patch.preset ? nextTheme.primaryColor : f.primaryColor,
-        accentColor: patch.accentColor ? patch.accentColor : patch.preset ? nextTheme.accentColor : f.accentColor,
+        // Colours live in one place: the theme. Keep the brand fields in sync.
+        primaryColor: nextTheme.primaryColor,
+        accentColor: nextTheme.accentColor,
       };
     });
 
@@ -268,8 +270,9 @@ export function DashboardClient({
     startTransition(async () => {
       const resolved: TenantTheme = resolveTheme({
         ...brandForm.theme,
-        primaryColor: brandForm.primaryColor,
-        accentColor: brandForm.accentColor,
+        primaryColor: brandForm.theme.primaryColor,
+        accentColor: brandForm.theme.accentColor,
+        tertiaryColor: brandForm.theme.tertiaryColor,
       });
       const res = await updateWorkspaceBrand(tenant.id, {
         name: brandForm.name,

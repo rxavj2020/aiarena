@@ -195,6 +195,8 @@ table.data tr:hover td { @apply bg-[#f8f9fb]; }
 
 /* Header */
 .s-header { position: sticky; top: 0; z-index: 40; border-bottom: 1px solid var(--t-border); background: var(--t-header); backdrop-filter: blur(14px); }
+/* Palette stripe: 2 colour blocks for duo themes, 3 for trio themes (from --site-bar). */
+.s-theme-bar { height: 3px; background: var(--site-bar, linear-gradient(90deg, var(--site-primary) 0 50%, var(--site-accent) 50% 100%)); }
 .s-header-row { display: flex; align-items: center; gap: 16px; height: 68px; }
 .s-brand { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
 .s-brand-mark { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: calc(var(--site-radius, 14px) * 0.8); background: var(--site-primary); color: var(--site-primary-ink); font-weight: 800; flex-shrink: 0; }
@@ -209,6 +211,11 @@ table.data tr:hover td { @apply bg-[#f8f9fb]; }
 .s-cart-btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px; border-radius: 999px; background: var(--site-primary); color: var(--site-primary-ink); font-size: 13.5px; font-weight: 700; }
 .s-cart-btn:hover { filter: brightness(1.06); }
 .s-cart-count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--site-accent); color: var(--site-accent-ink); font-size: 11px; font-weight: 800; }
+/* Three-colour themes: flowing gradients on buttons and badges. */
+.tenant-site[data-palette="three"] .s-btn-primary { background: var(--site-btn-gradient); background-size: 140% 140%; transition: background-position 0.25s ease; }
+.tenant-site[data-palette="three"] .s-btn-primary:hover:not(:disabled) { background-position: 100% 0; filter: brightness(1.05); }
+.tenant-site[data-palette="three"] .s-cart-count { background: var(--site-btn-gradient); color: var(--site-primary-ink); }
+.tenant-site[data-palette="three"] .s-success-icon { background: color-mix(in srgb, var(--site-third) 14%, transparent); color: var(--site-third); }
 .s-search { position: relative; display: none; flex: 1; max-width: 420px; }
 .s-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--t-faint); pointer-events: none; }
 .s-search-input { width: 100%; height: 40px; padding: 0 14px 0 36px; border-radius: 999px; border: 1px solid var(--t-border); background: var(--t-surface); color: var(--t-fg); font-size: 13.5px; outline: none; }
@@ -238,7 +245,7 @@ table.data tr:hover td { @apply bg-[#f8f9fb]; }
 .s-btn-block { width: 100%; }
 
 /* Hero */
-.s-hero { border-bottom: 1px solid var(--t-border); background: linear-gradient(115deg, var(--site-primary) 0%, color-mix(in srgb, var(--site-primary) 55%, #1a1a18) 58%, var(--site-accent) 150%); color: #fff; }
+.s-hero { border-bottom: 1px solid var(--t-border); background: var(--site-gradient, linear-gradient(115deg, var(--site-primary) 0%, var(--site-accent) 150%)); color: #fff; }
 .s-hero-grid { display: grid; gap: 32px; padding-top: 64px; padding-bottom: 64px; }
 @media (min-width: 1024px) { .s-hero-grid { grid-template-columns: 1.05fr 0.95fr; align-items: center; padding-top: 96px; padding-bottom: 96px; } }
 .s-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.1); font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.18em; color: rgba(255, 255, 255, 0.85); }
@@ -363,7 +370,9 @@ textarea.s-input { height: auto; padding: 10px 14px; }
 .s-paused > div { max-width: 420px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 
 /* Footer — platform attribution stays tiny and out of navigation */
-.s-footer { border-top: 1px solid var(--t-border); background: var(--t-surface); padding-top: 44px; }
+.s-footer { border-top: 1px solid var(--t-border); background: var(--t-surface); padding-top: 44px; position: relative; }
+/* Tri-stripe / duo-stripe sits on the footer edge as the palette signature. */
+.s-footer::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--site-bar, linear-gradient(90deg, var(--site-primary) 0 50%, var(--site-accent) 50% 100%)); }
 .s-footer-grid { display: grid; gap: 28px; padding-bottom: 36px; }
 @media (min-width: 768px) { .s-footer-grid { grid-template-columns: 2fr 1fr 1fr; } }
 .s-footer-brand { margin-bottom: 10px; }

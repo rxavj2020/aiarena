@@ -50,6 +50,7 @@ export function TenantHeader({ site, cartCount, appearance }: { site: TenantSite
           <input name="q" type="search" placeholder={`Search ${name}…`} className="s-search-input" aria-label="Search products" />
         </form>
       </div>
+      <div className="s-theme-bar" aria-hidden />
     </header>
   );
 }

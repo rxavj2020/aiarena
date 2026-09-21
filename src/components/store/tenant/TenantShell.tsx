@@ -38,6 +38,7 @@ export async function TenantShell({
       data-appearance-choice={appearance}
       data-appearance={resolved}
       data-preset={site.theme.preset}
+      data-palette={site.theme.colorMode}
       style={themeVars(site.theme) as React.CSSProperties}
     >
       {/* Resolve "system" before first paint and keep it in sync with the OS. */}

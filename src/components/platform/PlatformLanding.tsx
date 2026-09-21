@@ -123,7 +123,7 @@ export function PlatformLanding() {
             <h2 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">Serious commerce tools, calmly designed.</h2>
           </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Feature icon={<Palette className="h-5 w-5" />} title="Site-wide themes" text="Pick a theme once — presets, colours, type and corners apply to every page of your website, and shoppers can keep a light or dark mode." />
+            <Feature icon={<Palette className="h-5 w-5" />} title="Site-wide themes" text="Two-colour and three-colour theme presets — colours, type and corners apply to every page of your website, and shoppers can keep a light or dark mode." />
             <Feature icon={<Store className="h-5 w-5" />} title="Storefront that converts" text="Fast product pages, variants, coupons, COD or online payments, order tracking and a checkout that stays on your site." />
             <Feature icon={<BarChart3 className="h-5 w-5" />} title="Admin that thinks" text="An overview dashboard with the pulse of your store, plus focused tools for products, orders, plugins and settings." />
             <Feature icon={<Cloud className="h-5 w-5" />} title="Firestore first" text="Bring real catalogue and customer data. No fake records in new stores." />
