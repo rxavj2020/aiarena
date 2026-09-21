@@ -8,16 +8,21 @@ import type { Order, OrderItem } from "@/lib/db/schema";
 
 export function mailConfigured() {
   const s = getPluginState("smtp");
-  return s.enabled && !!s.config.host && !!s.config.user;
+  const oauthReady = s.config.authMode === "oauth" && !!s.config.oauthRefreshToken && !!s.config.oauthEmail;
+  return s.enabled && !!s.config.host && (oauthReady || (!!s.config.user && !!s.config.pass));
 }
 
 export function makeTransport(config?: Record<string, string>) {
   const c = config ?? getPluginState("smtp").config;
+  const oauth = c.authMode === "oauth" && c.oauthRefreshToken;
+  if (oauth && (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET)) throw new Error("Gmail OAuth is not configured on this Aurelia deployment");
   return nodemailer.createTransport({
     host: c.host,
     port: Number(c.port || 587),
     secure: c.secure === "true" || c.secure === "1" || Number(c.port) === 465,
-    auth: { user: c.user, pass: c.pass },
+    auth: oauth
+      ? { type: "OAuth2", user: c.oauthEmail || c.user, clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, refreshToken: c.oauthRefreshToken }
+      : { user: c.user, pass: c.pass },
   });
 }
 

@@ -3,6 +3,7 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getSession, type SessionUser } from "@/lib/auth";
 import { id } from "@/lib/utils";
+import { decryptSecret } from "@/lib/secrets";
 
 export const DEFAULT_TENANT_ID = "tenant_aurelia";
 export const WORKSPACE_COOKIE = "active_workspace";
@@ -103,10 +104,22 @@ export function workspaceStats(tenantId: string) {
 export function workspaceSetup(tenantId: string) {
   const firestore = getTenantIntegration(tenantId, "firestore");
   const domain = getTenantDomain(tenantId);
+  let firestoreAuthMode: "oauth" | "service_account" = "service_account";
+  let firestoreProjectId = "";
+  try {
+    const encrypted = firestore?.config?.encrypted;
+    if (encrypted) {
+      const config = JSON.parse(decryptSecret(encrypted)) as { authMode?: string; projectId?: string };
+      firestoreAuthMode = config.authMode === "oauth" ? "oauth" : "service_account";
+      firestoreProjectId = config.projectId ?? "";
+    }
+  } catch { /* an invalid credential is reported by the connection status */ }
   return {
     firestoreConnected: !!firestore?.enabled && firestore.lastTestOk === true,
     firestoreTested: firestore?.lastTestOk === true,
     firestoreMessage: firestore?.lastTestMessage ?? null,
+    firestoreAuthMode,
+    firestoreProjectId,
     domain,
     brandReady: !!getTenantById(tenantId)?.name,
   };

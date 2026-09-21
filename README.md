@@ -56,6 +56,11 @@ Each plugin has a guided setup, a *Test connection* button and an on/off switch.
 
 Only one payment gateway can be active at a time (enabling one disables the other).
 
+### OAuth-enabled connections
+Gmail SMTP and Google Firestore can use Google OAuth2 instead of manually entering a Gmail app password or Firestore service-account key. Configure a Google OAuth **Web application** in Google Cloud, add the callback URLs shown in the UI (`/api/oauth/google/callback` for admin plugins and `/api/oauth/google/firestore/callback` for subscriber workspace setup), and set `GOOGLE_CLIENT_ID` plus `GOOGLE_CLIENT_SECRET` on the Aurelia deployment. The admin still enters the SMTP host or Firestore project ID so the connection is unambiguous. OAuth refresh tokens and all API secrets are encrypted at rest; the browser only receives masked values.
+
+Razorpay, Cashfree, Cloudflare, R2 and Shiprocket use their provider-issued API credentials or provider login flows because those are the supported server integration methods. The plugin page provides a help icon beside every field, a step-by-step guide, webhook URLs where relevant, connection testing and a clear enablement check.
+
 ## Project layout
 ```
 src/app/platform     SaaS control plane      src/lib/platform    tenants, workspaces, domains

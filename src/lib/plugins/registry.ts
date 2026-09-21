@@ -1,5 +1,13 @@
 export type PluginField = { key: string; label: string; type: "text" | "password" | "select" | "toggle" | "textarea"; placeholder?: string; help?: string; options?: string[]; required?: boolean };
 
+export type PluginOAuth = {
+  provider: "google";
+  label: string;
+  description: string;
+  scopes: string[];
+  bypassRequired?: string[];
+};
+
 export type PluginDef = {
   id: string;
   name: string;
@@ -8,6 +16,7 @@ export type PluginDef = {
   docsUrl: string;
   icon: string;
   fields: PluginField[];
+  oauth?: PluginOAuth;
   exclusiveGroup?: string; // only one plugin in group can be enabled (e.g. primary payment gateway)
   setupSteps: string[];
   canTest: boolean;
@@ -65,6 +74,13 @@ export const PLUGINS: PluginDef[] = [
     docsUrl: "https://nodemailer.com/smtp/",
     icon: "✉️",
     canTest: true,
+    oauth: {
+      provider: "google",
+      label: "Connect Gmail with Google",
+      description: "Use Google OAuth2 instead of storing a Gmail app password. Requires Google OAuth credentials configured by the platform.",
+      scopes: ["openid", "email", "https://mail.google.com/"],
+      bypassRequired: ["pass"],
+    },
     fields: [
       { key: "host", label: "SMTP host", type: "text", placeholder: "smtp.gmail.com", required: true },
       { key: "port", label: "Port", type: "text", placeholder: "587", required: true },
@@ -76,9 +92,10 @@ export const PLUGINS: PluginDef[] = [
       { key: "adminEmail", label: "New order notifications to", type: "text", placeholder: "owner@yourstore.com", help: "Comma-separate multiple recipients" },
     ],
     setupSteps: [
-      "Gmail: enable 2-step verification, then create an App Password (Google Account → Security → App passwords). Host smtp.gmail.com, port 587.",
-      "Resend/Brevo/SES: create SMTP credentials in the provider dashboard and verify your sending domain (SPF + DKIM).",
-      "Paste credentials, set From email, click 'Send test email'.",
+      "Recommended for Gmail: configure a Google OAuth web client with the callback URL shown in this panel, save smtp.gmail.com as the host, then choose Connect Gmail with Google.",
+      "Alternative: enable 2-step verification and create a Gmail App Password (Google Account → Security → App passwords). Host smtp.gmail.com, port 587.",
+      "For Resend/Brevo/SES: create SMTP credentials in the provider dashboard and verify your sending domain (SPF + DKIM).",
+      "Run 'Send test email' after connecting, then enable the plugin.",
     ],
   },
   {
@@ -184,6 +201,13 @@ export const PLUGINS: PluginDef[] = [
     docsUrl: "https://console.firebase.google.com/",
     icon: "🔥",
     canTest: true,
+    oauth: {
+      provider: "google",
+      label: "Connect Google Cloud",
+      description: "Authorize a Google account that has Firestore access to this project. The project ID still identifies which database to use.",
+      scopes: ["openid", "email", "https://www.googleapis.com/auth/datastore"],
+      bypassRequired: ["clientEmail", "privateKey"],
+    },
     fields: [
       { key: "projectId", label: "Firebase / GCP project ID", type: "text", required: true },
       { key: "clientEmail", label: "Service account email", type: "text", placeholder: "firebase-adminsdk-xxxx@project.iam.gserviceaccount.com", required: true },
@@ -193,10 +217,10 @@ export const PLUGINS: PluginDef[] = [
       { key: "autoSyncMinutes", label: "Background full-sync interval (minutes, 0 = off)", type: "text", placeholder: "15" },
     ],
     setupSteps: [
-      "Firebase console → Create project → Build → Firestore Database → Create database (production mode).",
-      "Project settings → Service accounts → Generate new private key. Open the JSON.",
-      "Paste project_id, client_email and private_key here. Click 'Test connection'.",
-      "Enable, then click 'Sync everything to Firestore' once. From then on all writes are mirrored automatically.",
+      "Firebase console → Create project → Build → Firestore Database → Create database (production mode). Save the project ID below.",
+      "Recommended: configure a Google OAuth web client with the callback URL shown in this panel, then choose Connect Google Cloud. The Google account must have Firestore access to the project.",
+      "Alternative: Project settings → Service accounts → Generate a private key, then paste project_id, client_email and private_key here.",
+      "Run 'Test connection', enable the plugin, then click 'Sync everything to Firestore' once. From then on writes are mirrored automatically.",
       "On a fresh server: configure this plugin, then click 'Restore from Firestore' to rebuild the local database.",
     ],
   },

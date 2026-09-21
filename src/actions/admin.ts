@@ -6,7 +6,7 @@ import { id, slugify } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import { saveSettings, type StoreSettings } from "@/lib/settings";
 import { updateOrderStatus, addEvent } from "@/lib/orders";
-import { savePlugin, recordTest, getPluginState } from "@/lib/plugins/store";
+import { savePlugin, recordTest, getPluginState, mergedPluginConfig, pluginConfigHash } from "@/lib/plugins/store";
 import { testRazorpay, testCashfree, testCloudflare, cloudflarePurge } from "@/lib/plugins/payments";
 import { testShiprocket, getCouriers, shipOrder, createShiprocketOrder, trackOrder, cancelShipment } from "@/lib/plugins/shiprocket";
 import { testFirestore, fullSync, restoreFromFirestore, mirrorRow, scheduleAutoSync } from "@/lib/plugins/firestore";
@@ -205,7 +205,19 @@ export async function setUserRole(uid: string, role: "customer" | "admin") {
 
 // ---------- Plugins ----------
 export async function updatePlugin(pluginId: string, patch: { enabled?: boolean; config?: Record<string, string> }) {
-  return wrap(() => { savePlugin(pluginId, patch); mirrorRow("plugins", pluginId); if (pluginId === "firestore") scheduleAutoSync(); revalidateAll(); }, patch.enabled === true ? "Plugin enabled" : patch.enabled === false ? "Plugin disabled" : "Configuration saved");
+  return wrap(() => {
+    const def = pluginById(pluginId);
+    if (!def) throw new Error("Unknown plugin");
+    if (patch.enabled === true && def.canTest) {
+      const state = getPluginState(pluginId);
+      const candidate = mergedPluginConfig(pluginId, patch.config);
+      if (state.lastTestOk !== true || state.lastTestConfigHash !== pluginConfigHash(candidate)) throw new Error("Run a successful connection test with the current values before enabling this plugin");
+    }
+    savePlugin(pluginId, patch);
+    mirrorRow("plugins", pluginId);
+    if (pluginId === "firestore") scheduleAutoSync();
+    revalidateAll();
+  }, patch.enabled === true ? "Plugin enabled" : patch.enabled === false ? "Plugin disabled" : "Configuration saved");
 }
 
 export async function testPlugin(pluginId: string, config?: Record<string, string>): Promise<R> {
@@ -213,8 +225,8 @@ export async function testPlugin(pluginId: string, config?: Record<string, strin
     await requireAdmin();
     const def = pluginById(pluginId);
     if (!def) throw new Error("Unknown plugin");
-    const saved = getPluginState(pluginId).config;
-    const c = { ...saved };
+    const existingConfig = getPluginState(pluginId).config;
+    const c = { ...existingConfig };
     for (const [k, v] of Object.entries(config ?? {})) if (v !== "") c[k] = v;
     let msg = "OK";
     if (pluginId === "razorpay") msg = await testRazorpay(c);
@@ -230,7 +242,11 @@ export async function testPlugin(pluginId: string, config?: Record<string, strin
       if (!r.ok) throw new Error(r.error);
       msg = `SMTP verified and test email sent to ${to}`;
     }
-    recordTest(pluginId, true, msg);
+    // A successful test also persists exactly what was tested. This prevents a
+    // user from testing one credential set and enabling another one.
+    const saved = savePlugin(pluginId, { config: c });
+    recordTest(pluginId, true, msg, pluginConfigHash(saved.config));
+    mirrorRow("plugins", pluginId);
     revalidatePath(`/admin/plugins/${pluginId}`);
     return { ok: true, message: msg };
   } catch (e) {
@@ -248,7 +264,7 @@ export async function purgeCloudflare() {
 export async function adminLogout() {
   const { destroySession } = await import("@/lib/auth");
   await destroySession();
-  redirect("/admin/login");
+  redirect("/login?next=/admin");
 }
 
 // ---------- Firestore ----------

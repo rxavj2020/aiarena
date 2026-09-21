@@ -14,7 +14,12 @@ SITE_URL=https://yourstore.com
 DATABASE_URL=/app/data/store.db      # on the persistent volume
 ADMIN_EMAIL=you@yourstore.com
 ADMIN_PASSWORD=<strong password>     # used only on first seed
+# Optional Google OAuth for Gmail SMTP + Firestore
+GOOGLE_CLIENT_ID=<Google OAuth web client ID>
+GOOGLE_CLIENT_SECRET=<Google OAuth web client secret>
 ```
+For OAuth, register both `https://yourstore.com/api/oauth/google/callback` and `https://yourstore.com/api/oauth/google/firestore/callback` as authorized redirect URIs in the Google Cloud OAuth client. Keep `AUTH_SECRET`, `GOOGLE_CLIENT_SECRET` and all provider credentials private.
+
 First boot: `npm run db:seed` (or run it once from a shell in the container).
 
 ### Dockerfile
@@ -51,11 +56,11 @@ CMD ["npm","start"]
 ## 4. Payments & email
 - **Razorpay**: Settings → API Keys; Settings → Webhooks → `https://yourstore.com/api/webhooks/razorpay` (events `payment.captured`, `payment.failed`) with the same secret you enter in the plugin.
 - **Cashfree**: Developers → API keys; Webhooks → `https://yourstore.com/api/webhooks/cashfree`.
-- **SMTP**: Gmail app password (host `smtp.gmail.com`, port 587) or a transactional provider (Resend/Brevo/SES) with SPF + DKIM configured on your domain. Use *Send test email* to verify.
+- **SMTP**: Recommended Gmail flow is Google OAuth2 from the plugin page (host `smtp.gmail.com`), which avoids storing an app password. The fallback is a Gmail app password (port 587) or a transactional provider (Resend/Brevo/SES) with SPF + DKIM configured on your domain. Use *Send test email* to verify.
 
 ## Firestore as the durable database
-If you enable **Admin → Plugins → Google Firestore**, SQLite becomes a disposable local cache:
-1. Configure the service account, *Test connection*, enable, click **Sync everything to Firestore** once.
+If you enable **Admin → Plugins → Google Firestore**, SQLite becomes a disposable local cache. Use the Google OAuth button after saving the Firebase project ID, or use a service account when OAuth is not suitable:
+1. Connect Google OAuth (or configure the service account), *Test connection*, enable, click **Sync everything to Firestore** once.
 2. On any new server/container: run `npm run db:seed` (creates the schema + admin), configure the Firestore plugin, click **Restore from Firestore**. All products, orders, customers and settings come back.
 3. Set *Background full-sync interval* (e.g. 15 min) as a safety net in addition to the real-time write-through.
 

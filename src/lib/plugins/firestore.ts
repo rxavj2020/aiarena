@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { getPluginState } from "./store";
+import { refreshGoogleAccessToken } from "./oauth";
 import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
 
@@ -24,9 +25,15 @@ function b64url(b: Buffer | string) {
 }
 
 export async function getAccessToken(c: Cfg) {
-  const key = c.clientEmail;
+  const key = c.authMode === "oauth" ? `oauth:${c.oauthRefreshToken}` : c.clientEmail;
   const cached = tokenCache.get(key);
   if (cached && cached.exp > Date.now() + 60_000) return cached.token;
+  if (c.authMode === "oauth" && c.oauthRefreshToken) {
+    const j = await refreshGoogleAccessToken(c);
+    tokenCache.set(key, { token: j.access_token!, exp: Date.now() + (j.expires_in ?? 3600) * 1000 });
+    return j.access_token!;
+  }
+  if (!c.clientEmail || !c.privateKey) throw new Error("Firestore needs either Google OAuth or a service-account email and private key");
   const now = Math.floor(Date.now() / 1000);
   const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claim = b64url(JSON.stringify({ iss: c.clientEmail, scope: "https://www.googleapis.com/auth/datastore", aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 }));
@@ -90,7 +97,9 @@ export async function deleteFirestoreDocument(c: FirestoreConfig, table: string,
 
 function isActive() {
   const s = getPluginState("firestore");
-  return s.enabled && s.config.projectId && s.config.privateKey ? s.config : null;
+  const oauth = s.config.authMode === "oauth" && s.config.oauthRefreshToken;
+  const serviceAccount = s.config.clientEmail && s.config.privateKey;
+  return s.enabled && s.config.projectId && (oauth || serviceAccount) ? s.config : null;
 }
 
 /** Raw row access via SQLite so we can sync generically. */

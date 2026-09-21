@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS pages (
   show_in_footer INTEGER NOT NULL DEFAULT 1, updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS plugins (
-  id TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0, config TEXT NOT NULL DEFAULT '{}', last_test_at TEXT, last_test_ok INTEGER, last_test_message TEXT);
+  id TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0, config TEXT NOT NULL DEFAULT '{}', last_test_at TEXT, last_test_ok INTEGER, last_test_message TEXT, last_test_config_hash TEXT);
 CREATE TABLE IF NOT EXISTS subscribers (
   id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
 CREATE TABLE IF NOT EXISTS mail_log (
@@ -96,4 +96,6 @@ CREATE TABLE IF NOT EXISTS mail_log (
   for (const [name, ddl] of [["shiprocket_order_id", "TEXT"], ["shiprocket_shipment_id", "TEXT"], ["label_url", "TEXT"]]) {
     if (!cols.includes(name)) sqlite.exec(`ALTER TABLE orders ADD COLUMN ${name} ${ddl}`);
   }
+  const pluginCols = (sqlite.prepare("PRAGMA table_info(plugins)").all() as { name: string }[]).map((c) => c.name);
+  if (!pluginCols.includes("last_test_config_hash")) sqlite.exec("ALTER TABLE plugins ADD COLUMN last_test_config_hash TEXT");
 }

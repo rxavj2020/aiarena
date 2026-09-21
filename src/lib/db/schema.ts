@@ -238,6 +238,7 @@ export const plugins = sqliteTable("plugins", {
   lastTestAt: text("last_test_at"),
   lastTestOk: integer("last_test_ok", { mode: "boolean" }),
   lastTestMessage: text("last_test_message"),
+  lastTestConfigHash: text("last_test_config_hash"),
 });
 
 export const subscribers = sqliteTable("subscribers", {

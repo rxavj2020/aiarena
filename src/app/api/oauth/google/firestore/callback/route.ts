@@ -1,0 +1,8 @@
+import { handleWorkspaceFirestoreCallback } from "@/lib/platform-oauth";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+export async function GET(request: Request) {
+  return handleWorkspaceFirestoreCallback(request);
+}
