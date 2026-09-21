@@ -51,7 +51,7 @@ export function PlatformShell({ children, workspaces, current }: { children: Rea
           {current ? (
             <>
               <Link href="/admin" className="flex items-center gap-3 rounded-xl px-3 py-3 text-white/70 transition hover:bg-white/10 hover:text-white"><Settings2 className="h-4 w-4" /> Store admin</Link>
-              <Link href={`/site/${current.slug}`} target="_blank" className="flex items-center gap-3 rounded-xl px-3 py-3 text-white/70 transition hover:bg-white/10 hover:text-white"><ExternalLink className="h-4 w-4" /> View public site</Link>
+              <Link href={`/store/${current.slug}`} target="_blank" className="flex items-center gap-3 rounded-xl px-3 py-3 text-white/70 transition hover:bg-white/10 hover:text-white"><ExternalLink className="h-4 w-4" /> View public site</Link>
             </>
           ) : null}
           <div className="flex items-center gap-2 px-3 pt-3 text-[11px] text-white/35"><ShieldCheck className="h-3.5 w-3.5" /> Secure workspace controls</div>
@@ -68,7 +68,7 @@ export function PlatformShell({ children, workspaces, current }: { children: Rea
             <div className="hidden text-sm text-black/45 lg:block">Workspace control plane</div>
             <div className="ml-auto flex items-center gap-2">
               {current ? <span className="hidden rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold sm:inline-flex">{current.name}</span> : null}
-              <Link href="/admin" className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold transition hover:border-black/30">Open admin</Link>
+              {current ? <Link href="/admin" className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold transition hover:border-black/30">Open admin</Link> : null}
             </div>
           </div>
         </header>

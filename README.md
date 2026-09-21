@@ -1,6 +1,6 @@
 # Aurelia Commerce — full-stack e-commerce platform
 
-A production-ready storefront **plus** a dedicated admin console, built with Next.js 15 (App Router), TypeScript, Tailwind v4, Drizzle ORM and SQLite. Zero external services are required to run it — plug in payments, email, storage and CDN from the admin **Plugins** page when you're ready.
+A three-layer SaaS commerce platform with a marketing site, subscriber workspaces and tenant storefronts, built with Next.js 15 (App Router), TypeScript, Tailwind v4, Drizzle ORM and SQLite. Firestore-backed tenant catalogue data is isolated from the seeded Aurelia demo; plug in payments, email, storage and CDN from the admin **Plugins** page when you're ready.
 
 ## Quick start
 
@@ -12,11 +12,12 @@ npm run dev         # http://localhost:3000
 
 | Role | URL | Login |
 |---|---|---|
-| SaaS landing / Studio | `/platform` | — |
-| Workspace owner signup | `/platform/signup` | — |
-| Storefront demo | `/` | — |
-| Customer demo | `/login` | customer@example.com / customer1234 |
-| **Store admin** | `/admin` | admin@example.com / admin1234 |
+| SaaS marketing website | `/` | — |
+| Authenticated Studio control plane | `/platform` | — |
+| Workspace owner signup | `/register` or `/platform/signup` | — |
+| Workspace owner login | `/login` or `/platform/login` | — |
+| Legacy Aurelia storefront | `/store/aurelia` (`/site/aurelia` alias) | — |
+| **Selected workspace admin** | `/admin` | admin@example.com / admin1234 |
 
 Change admin credentials via `ADMIN_EMAIL` / `ADMIN_PASSWORD` before the first seed, or promote any user from **Admin → Customers**. Set a strong `AUTH_SECRET` in `.env.local` (see `.env.example`).
 
@@ -58,9 +59,10 @@ Only one payment gateway can be active at a time (enabling one disables the othe
 ## Project layout
 ```
 src/app/platform     SaaS control plane      src/lib/platform    tenants, workspaces, domains
-src/app/(store)      legacy storefront       src/lib/db          schema + auto-migrations (SQLite)
-src/app/site/[slug]  tenant storefront route  src/lib/plugins     registry, mail, payments, storage
-src/app/admin        store admin console      src/actions         server actions (cart, checkout, admin, platform)
+src/app/(store)      legacy store routes     src/lib/db          schema + auto-migrations (SQLite)
+src/app/store/[slug] canonical tenant site   src/lib/plugins     registry, mail, payments, storage
+src/app/site/[slug]  compatibility alias      src/actions         server actions (cart, checkout, admin, platform)
+src/app/admin        selected workspace admin
 src/app/api          webhooks, uploads, CSV  src/components      platform / store / admin / ui
 scripts/seed.ts      demo data (legacy Aurelia workspace)
 ```
@@ -76,9 +78,9 @@ Aurelia now has a three-layer foundation for turning the single-store demo into 
 
 | Layer | Route | Responsibility |
 |---|---|---|
-| **Aurelia Studio** | `/platform` | Subscriber onboarding, workspaces, plans, Firestore connection, brand and domain setup |
-| **Store admin** | `/admin` | Products, orders, customers, content, plugins and store operations for the active workspace |
-| **Public store** | `/site/{workspace-slug}` | The customer-facing branded storefront; verified custom domains resolve to the same tenant route |
+| **Aurelia Studio** | `/` and `/platform` | SaaS marketing, subscriber onboarding, workspaces, plans, Firestore connection, brand and domain setup |
+| **Store admin** | `/admin` | Private products and operations for the selected subscriber workspace |
+| **Public store** | `/store/{workspace-slug}` | The customer-facing branded storefront; `/site/{workspace-slug}` remains a compatibility alias and verified custom domains render the same tenant |
 
 ### First-time subscriber flow
 
@@ -91,4 +93,4 @@ Aurelia now has a three-layer foundation for turning the single-store demo into 
 
 Workspace Firestore credentials are encrypted before they are written to `tenant_integrations` and are never returned to the browser. New workspaces start with an empty catalogue; no demo products, customers or orders are copied into them. The subscriber product builder writes to a collection prefix that always includes the workspace slug, even when two stores use the same Firebase project.
 
-The existing seeded Aurelia workspace remains available at `/`, `/admin` and `/site/aurelia` so the current demo can continue to be reviewed. For safety, a newly created workspace never displays the legacy Aurelia records. Its tenant-safe admin starts with a Firestore-backed product builder; orders, customers, content and the remaining plugins can be added to the same tenant repository without changing the public/store boundary.
+The existing seeded Aurelia workspace remains available at the explicit `/store/aurelia` route and `/site/aurelia` compatibility alias. The SaaS landing page at `/` never renders that demo. For safety, a newly created workspace never displays the legacy Aurelia records. Its tenant-safe admin starts with a Firestore-backed product builder; orders, customers, content and the remaining plugins can be added to the same tenant repository without changing the public/store boundary.

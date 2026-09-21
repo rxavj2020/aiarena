@@ -9,8 +9,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return tenant ? { title: tenant.name, description: tenant.tagline } : { title: "Store" };
 }
 
-/** Compatibility alias. New links use /store/[slug]. */
-export default async function CompatibilityStorePage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function StorePage({ params }: { params: Promise<{ slug: string }> }) {
   const tenant = getTenantBySlug((await params).slug);
   if (!tenant) notFound();
   return <TenantStorefront tenant={tenant} />;

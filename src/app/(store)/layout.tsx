@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { getSettings } from "@/lib/settings";
 import { Header } from "@/components/store/Header";
 import { Footer } from "@/components/store/Footer";
@@ -17,6 +18,9 @@ import { MobileSearchModal } from "@/components/store/MobileSearchModal";
 export const dynamic = "force-dynamic";
 
 export default async function StoreLayout({ children }: { children: React.ReactNode }) {
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  // The root URL belongs to Aurelia Studio, not to the legacy demo storefront.
+  if (pathname === "/" || pathname === "") return <>{children}</>;
   const [s, cart, session, categories] = await Promise.all([
     getSettings(),
     readCart(),

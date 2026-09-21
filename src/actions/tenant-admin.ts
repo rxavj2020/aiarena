@@ -33,7 +33,7 @@ export async function saveWorkspaceProduct(tenantId: string, input: unknown): Pr
     const tenant = getTenantById(tenantId);
     if (tenant) {
       revalidatePath(`/admin`);
-      revalidatePath(`/site/${tenant.slug}`);
+      revalidatePath(`/store/${tenant.slug}`);
     }
     return { ok: true, message: parsed.data.status === "active" ? "Product published" : "Product saved as draft" };
   } catch (error) {

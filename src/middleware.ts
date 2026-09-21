@@ -4,4 +4,6 @@ export function middleware(req: NextRequest) {
   h.set("x-pathname", req.nextUrl.pathname);
   return NextResponse.next({ request: { headers: h } });
 }
-export const config = { matcher: ["/admin/:path*", "/platform", "/platform/:path*", "/site/:path*"] };
+// The pathname header is used to keep the SaaS shell, store shell and tenant website
+// from accidentally sharing each other’s chrome. Static assets are excluded.
+export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"] };

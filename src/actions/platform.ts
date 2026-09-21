@@ -74,7 +74,7 @@ export async function saveWorkspaceBranding(tenantId: string, input: { name: str
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
     db.update(schema.tenants).set({ ...parsed.data, logoUrl: parsed.data.logoUrl || null, updatedAt: new Date().toISOString() }).where(eq(schema.tenants.id, tenantId)).run();
     revalidatePath("/platform", "layout");
-    revalidatePath(`/site/${getTenantById(tenantId)?.slug ?? ""}`);
+    revalidatePath(`/store/${getTenantById(tenantId)?.slug ?? ""}`);
     return { ok: true, message: "Brand settings saved" };
   });
 }
