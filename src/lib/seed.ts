@@ -3,7 +3,6 @@ import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { id, slugify } from "@/lib/utils";
 
-const img = (seed: string, w = 900, h = 900) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
 // For clothing/jewellery use more relevant placeholder via picsum but seed names help
 const fashionImg = (seed: string, w = 900, h = 900) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
 

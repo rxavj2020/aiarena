@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { formatMoney } from "@/lib/format";
-import { Star, ShoppingBag, Truck, Gem } from "lucide-react";
+import { Star, ShoppingBag, Truck } from "lucide-react";
 import type { Product } from "@/lib/db/schema";
 import { WishlistButton } from "./WishlistButton";
 import { useState, useTransition } from "react";
@@ -29,7 +29,6 @@ export function ProductCard({
       ? Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100)
       : 0;
   const out = p.trackStock && p.stock <= 0;
-  const lowStock = p.trackStock && p.stock > 0 && p.stock <= 5;
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();

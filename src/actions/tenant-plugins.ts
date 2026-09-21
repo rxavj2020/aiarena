@@ -129,8 +129,21 @@ export async function updateStorePlugin(tenantId: string, provider: string, inpu
     saveRow(tenantId, provider, config, { enabled });
     revalidatePath("/admin");
     revalidatePath(`/admin/plugins/${provider}`);
+    revalidatePath("/dashboard");
     return { ok: true, message: enabled ? "Integration enabled" : "Integration disabled" };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
+}
+
+export async function toggleTenantPlugin(tenantId: string, provider: string, enabled: boolean): Promise<TenantPluginResult> {
+  return updateStorePlugin(tenantId, provider, { enabled });
+}
+
+export async function saveTenantPluginConfig(tenantId: string, provider: string, config: Record<string, string>): Promise<TenantPluginResult> {
+  return updateStorePlugin(tenantId, provider, { config });
+}
+
+export async function testTenantPluginAction(tenantId: string, provider: string, config: Record<string, string>): Promise<TenantPluginResult> {
+  return testStorePlugin(tenantId, provider, config);
 }

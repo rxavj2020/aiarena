@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
 
-export const metadata = { title: "Log in to Aurelia Studio" };
+export const metadata = { title: "Subscriber Login" };
 
-/** SaaS owner login alias. */
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const s = await getSession();
+  if (s) redirect("/dashboard");
   const next = (await searchParams).next;
-  redirect(`/platform/login${next ? `?next=${encodeURIComponent(next)}` : ""}`);
+  redirect(`/platform/login?next=${encodeURIComponent(next || "/dashboard")}`);
 }

@@ -6,7 +6,7 @@ import Script from "next/script";
 import { placeOrder, validateCoupon } from "@/actions/checkout";
 import { formatMoney } from "@/lib/format";
 import type { Totals } from "@/lib/cart";
-import { Lock, Loader2, ShieldCheck, CheckCircle2, Sparkles, Truck, MapPin, CreditCard, Tag, ChevronRight, Plus, ChevronDown } from "lucide-react";
+import { Lock, Loader2, ShieldCheck, CheckCircle2, Sparkles, Truck, CreditCard, Tag, ChevronRight, Plus, ChevronDown } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 
 type Addr = {
@@ -102,7 +102,7 @@ export function CheckoutForm(props: {
       const detectedState = inferStateFromPin(savedPincode);
       setAddr((prev) => ({ ...prev, postalCode: savedPincode, state: detectedState || prev.state }));
     }
-  }, [savedPincode]);
+  }, [savedPincode, addr.postalCode]);
 
   // When selected address changes, fill form
   useEffect(() => {
@@ -112,7 +112,7 @@ export function CheckoutForm(props: {
         setAddr({ name: a.name, phone: a.phone, line1: a.line1, line2: a.line2 ?? "", city: a.city, state: a.state, postalCode: a.postalCode, country: a.country });
       }
     }
-  }, [selectedAddrId]);
+  }, [selectedAddrId, props.addresses]);
 
   const t = props.initialTotals;
   const shipping = t.shipping + (pm === "cod" ? props.codFee : 0);

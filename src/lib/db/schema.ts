@@ -119,10 +119,11 @@ export const products = sqliteTable(
     weightGrams: integer("weight_grams"),
     seoTitle: text("seo_title"),
     seoDescription: text("seo_description"),
+    tenantId: text("tenant_id").notNull().default("tenant_aurelia"),
     createdAt: text("created_at").notNull().default(now()),
     updatedAt: text("updated_at").notNull().default(now()),
   },
-  (t) => [index("products_status_idx").on(t.status), index("products_category_idx").on(t.categoryId)]
+  (t) => [index("products_status_idx").on(t.status), index("products_category_idx").on(t.categoryId), index("products_tenant_idx").on(t.tenantId)]
 );
 
 export const variants = sqliteTable("variants", {
@@ -142,6 +143,7 @@ export const orders = sqliteTable(
     id: text("id").primaryKey(),
     orderNumber: integer("order_number").notNull().unique(),
     userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+    tenantId: text("tenant_id").notNull().default("tenant_aurelia"),
     email: text("email").notNull(),
     phone: text("phone"),
     status: text("status", { enum: ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "refunded"] })
@@ -168,7 +170,7 @@ export const orders = sqliteTable(
     createdAt: text("created_at").notNull().default(now()),
     updatedAt: text("updated_at").notNull().default(now()),
   },
-  (t) => [index("orders_status_idx").on(t.status), index("orders_user_idx").on(t.userId)]
+  (t) => [index("orders_status_idx").on(t.status), index("orders_user_idx").on(t.userId), index("orders_tenant_idx").on(t.tenantId)]
 );
 
 export const orderItems = sqliteTable("order_items", {

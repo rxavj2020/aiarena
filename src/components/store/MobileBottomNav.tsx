@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, LayoutGrid, Search, Heart, ShoppingBag, User } from "lucide-react";
+import { Home, LayoutGrid, Search, Heart, ShoppingBag } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { useEffect, useState } from "react";
 

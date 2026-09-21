@@ -14,6 +14,7 @@ import {
   X,
   Truck,
   ShieldCheck,
+  LayoutDashboard,
 } from "lucide-react";
 import type { StoreSettings } from "@/lib/settings";
 import type { SessionUser } from "@/lib/auth";
@@ -160,6 +161,11 @@ export function Header({
                           <div className="text-xs text-[#878787] truncate">{user.email}</div>
                         </div>
                         <div className="p-2">
+                          {user.role === "admin" && (
+                            <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-50 text-[#2874f0] hover:bg-blue-100 text-sm font-semibold mb-1">
+                              <LayoutDashboard className="h-4 w-4" /> Store Dashboard
+                            </Link>
+                          )}
                           <Link href="/account" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f1f2f4] text-sm text-[#212121]">
                             <User className="h-4 w-4" /> My Account
                           </Link>
@@ -339,6 +345,15 @@ export function Header({
                 <div className="border-t border-[#f0f0f0] pt-6">
                   <div className="text-[11px] font-bold uppercase tracking-widest text-[#878787] mb-3 px-2">Help & Settings</div>
                   <div className="space-y-1">
+                    {user?.role === "admin" && (
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-blue-50 text-[#2874f0] font-semibold text-sm mb-1"
+                      >
+                        <LayoutDashboard className="h-4 w-4" /> Store Dashboard
+                      </Link>
+                    )}
                     {s.nav.map((n) => (
                       <Link
                         key={n.href}

@@ -36,7 +36,7 @@ export function AddToCart({
 
   useEffect(() => {
     if (onVariantChange) onVariantChange(variant ?? null);
-  }, [variant?.id]);
+  }, [onVariantChange, variant]);
 
   const submit = (buyNow: boolean) => {
     setErr(null);

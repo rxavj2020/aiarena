@@ -1,5 +1,5 @@
 import { db, schema } from "@/lib/db";
-import { desc, sql, eq, like } from "drizzle-orm";
+import { desc, sql, like } from "drizzle-orm";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { formatMoney, formatDate } from "@/lib/format";
 import { getSettings } from "@/lib/settings";

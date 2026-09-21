@@ -3,6 +3,8 @@ import { getTenantIntegration } from "@/lib/platform";
 import { isPluginSecretKey } from "@/lib/plugins/store";
 import { pluginById, PLUGINS, type PluginDef } from "@/lib/plugins/registry";
 
+export type { PluginDef, PluginDef as TenantPluginDefinition };
+
 export type TenantPluginState = {
   id: string;
   enabled: boolean;

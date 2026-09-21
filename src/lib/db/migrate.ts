@@ -100,4 +100,7 @@ CREATE TABLE IF NOT EXISTS mail_log (
   if (!pluginCols.includes("last_test_config_hash")) sqlite.exec("ALTER TABLE plugins ADD COLUMN last_test_config_hash TEXT");
   const tenantIntegrationCols = (sqlite.prepare("PRAGMA table_info(tenant_integrations)").all() as { name: string }[]).map((c) => c.name);
   if (!tenantIntegrationCols.includes("last_test_config_hash")) sqlite.exec("ALTER TABLE tenant_integrations ADD COLUMN last_test_config_hash TEXT");
+  const productCols = (sqlite.prepare("PRAGMA table_info(products)").all() as { name: string }[]).map((c) => c.name);
+  if (!productCols.includes("tenant_id")) sqlite.exec("ALTER TABLE products ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'tenant_aurelia'");
+  if (!cols.includes("tenant_id")) sqlite.exec("ALTER TABLE orders ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'tenant_aurelia'");
 }

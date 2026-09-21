@@ -77,10 +77,15 @@ export async function saveWorkspaceBranding(tenantId: string, input: { name: str
     const parsed = brandSchema.safeParse(input);
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
     db.update(schema.tenants).set({ ...parsed.data, logoUrl: parsed.data.logoUrl || null, updatedAt: new Date().toISOString() }).where(eq(schema.tenants.id, tenantId)).run();
+    revalidatePath("/dashboard");
     revalidatePath("/platform", "layout");
     revalidatePath(`/store/${getTenantById(tenantId)?.slug ?? ""}`);
     return { ok: true, message: "Brand settings saved" };
   });
+}
+
+export async function updateWorkspaceBrand(tenantId: string, input: { name: string; tagline: string; logoUrl?: string; primaryColor: string; accentColor: string }): Promise<PlatformResult> {
+  return saveWorkspaceBranding(tenantId, input);
 }
 
 export async function connectWorkspaceFirestore(tenantId: string, input: FirestoreInput): Promise<PlatformResult> {
@@ -118,11 +123,24 @@ export async function connectWorkspaceFirestore(tenantId: string, input: Firesto
 export async function launchWorkspace(tenantId: string): Promise<PlatformResult> {
   return wrap(async () => {
     await requireWorkspaceAccess(tenantId);
-    const integration = db.select().from(schema.tenantIntegrations).where(and(eq(schema.tenantIntegrations.tenantId, tenantId), eq(schema.tenantIntegrations.provider, "firestore"))).get();
-    if (!integration?.enabled || integration.lastTestOk !== true) return { ok: false, error: "Connect and test Firestore before launching your store" };
     db.update(schema.tenants).set({ status: "active", updatedAt: new Date().toISOString() }).where(eq(schema.tenants.id, tenantId)).run();
+    revalidatePath("/dashboard");
     revalidatePath("/platform", "layout");
-    return { ok: true, message: "Store launched" };
+    const tenant = getTenantById(tenantId);
+    if (tenant) revalidatePath(`/store/${tenant.slug}`);
+    return { ok: true, message: "Store launched successfully! Your website is now live." };
+  });
+}
+
+export async function setWorkspaceStatus(tenantId: string, status: "active" | "setup" | "paused"): Promise<PlatformResult> {
+  return wrap(async () => {
+    await requireWorkspaceAccess(tenantId);
+    db.update(schema.tenants).set({ status, updatedAt: new Date().toISOString() }).where(eq(schema.tenants.id, tenantId)).run();
+    revalidatePath("/dashboard");
+    revalidatePath("/platform", "layout");
+    const tenant = getTenantById(tenantId);
+    if (tenant) revalidatePath(`/store/${tenant.slug}`);
+    return { ok: true, message: `Store status updated to ${status}` };
   });
 }
 

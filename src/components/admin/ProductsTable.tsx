@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Product, Category } from "@/lib/db/schema";
 import { formatMoney } from "@/lib/format";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { bulkProductStatus, deleteProducts, quickUpdateProduct, duplicateProduct } from "@/actions/admin";
 import { useToast, notify } from "@/components/ui/Toast";
 import { Copy, Star, Trash2, ExternalLink, MoreVertical, Package } from "lucide-react";

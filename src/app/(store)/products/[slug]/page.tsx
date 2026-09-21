@@ -10,7 +10,7 @@ import { WishlistButton } from "@/components/store/WishlistButton";
 import { StickyBuyBar } from "@/components/store/StickyBuyBar";
 import { RecentlyViewed } from "@/components/store/RecentlyViewed";
 import { ProductDetail } from "@/components/store/ProductDetail";
-import { Star, Truck, ShieldCheck, RefreshCw, Award, CheckCircle2, CreditCard, Info, Share2 } from "lucide-react";
+import { Star, Truck, ShieldCheck, RefreshCw, Award, CreditCard, Info, Share2 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -30,10 +30,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const [s, session] = await Promise.all([getSettings(), getSession()]);
   const reviews = getProductReviews(p.id);
   const related = relatedProducts(p, 8);
-  const off =
-    p.compareAtPrice && p.compareAtPrice > p.price
-      ? Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100)
-      : 0;
 
   const jsonLd = {
     "@context": "https://schema.org",

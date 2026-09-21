@@ -3,7 +3,7 @@
 import { useStore } from "@/lib/store/useStore";
 import { formatMoney } from "@/lib/format";
 import Link from "next/link";
-import { Heart, Trash2, ShoppingBag, ArrowRight, Sparkles } from "lucide-react";
+import { Heart, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { addToCart } from "@/actions/cart";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";

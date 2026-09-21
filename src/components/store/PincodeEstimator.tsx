@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store/useStore";
-import { MapPin, Truck, CheckCircle, Clock, ShieldCheck, Package } from "lucide-react";
+import { MapPin, Truck, CheckCircle, Clock, Package } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 
 export function PincodeEstimator({ freeAbove = 0, price = 0, codEnabled = true, currency = "INR" }: { freeAbove?: number; price?: number; codEnabled?: boolean; currency?: string }) {

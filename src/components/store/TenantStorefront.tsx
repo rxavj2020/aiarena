@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, Check, ChevronRight, Heart, Menu, Search, ShieldCheck, ShoppingBag, Sparkles, Truck } from "lucide-react";
 import { DEFAULT_TENANT_ID } from "@/lib/platform";
-import { schema } from "@/lib/db";
+import { db, schema } from "@/lib/db";
+import { and, eq } from "drizzle-orm";
 import { getSettings } from "@/lib/settings";
 import { queryProducts } from "@/lib/catalog";
 import { listTenantProducts } from "@/lib/tenant-firestore";
@@ -10,9 +11,37 @@ import { formatMoney } from "@/lib/format";
 export async function TenantStorefront({ tenant }: { tenant: schema.Tenant }) {
   const base = await getSettings();
   const isLegacyCatalog = tenant.id === DEFAULT_TENANT_ID;
-  const products = isLegacyCatalog
-    ? queryProducts({ perPage: 8, sort: "newest" }).items.map((product) => ({ id: product.id, name: product.name, slug: product.slug, price: product.price, image: product.images[0] ?? "" }))
-    : (await listTenantProducts(tenant.id).catch(() => [])).map((product) => ({ id: product.id, name: product.name, slug: product.slug, price: product.price, image: product.image }));
+  const dbProducts = db.select().from(schema.products).where(and(eq(schema.products.tenantId, tenant.id), eq(schema.products.status, "active"))).all();
+  const firestoreProducts = await listTenantProducts(tenant.id).catch(() => []);
+  
+  let products = dbProducts.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    price: p.price,
+    image: (p.images && Array.isArray(p.images) && p.images[0]) || "",
+  }));
+
+  if (!products.length && firestoreProducts.length) {
+    products = firestoreProducts.map((p) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      price: p.price,
+      image: p.image,
+    }));
+  }
+
+  if (!products.length && isLegacyCatalog) {
+    products = queryProducts({ perPage: 8, sort: "newest" }).items.map((product) => ({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      image: product.images[0] ?? "",
+    }));
+  }
+
   const brand = { ...base, storeName: tenant.name, tagline: tenant.tagline, logoUrl: tenant.logoUrl ?? base.logoUrl, primaryColor: tenant.primaryColor, accentColor: tenant.accentColor };
 
   if (tenant.status === "paused") {
@@ -36,7 +65,7 @@ export async function TenantStorefront({ tenant }: { tenant: schema.Tenant }) {
 
         <section className="mx-auto grid max-w-[1240px] grid-cols-2 gap-3 px-5 py-5 sm:grid-cols-4 sm:px-8"><Trust icon={<Truck className="h-4 w-4" />} title="Careful delivery" text="Tracked to your door" /><Trust icon={<ShieldCheck className="h-4 w-4" />} title="Secure checkout" text="Your data stays private" /><Trust icon={<Check className="h-4 w-4" />} title="Quality checked" text="Made with intention" /><Trust icon={<Sparkles className="h-4 w-4" />} title="Personal support" text="Here when you need us" /></section>
 
-        <section id="collection" className="mx-auto max-w-[1240px] px-5 pb-16 pt-8 sm:px-8 sm:pt-12"><div className="flex items-end justify-between gap-3"><div><div className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/35">The collection</div><h2 className="mt-1 font-display text-3xl font-bold tracking-tight">Pieces worth discovering</h2></div>{products.length && isLegacyCatalog ? <Link href="/shop" className="inline-flex items-center gap-1 text-sm font-bold text-black/55 hover:text-black">View all <ChevronRight className="h-4 w-4" /></Link> : null}</div>{products.length ? <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{products.map((product) => <Link key={product.id} href={isLegacyCatalog ? `/products/${product.slug}` : `/store/${tenant.slug}#collection`} className="group overflow-hidden rounded-2xl border border-black/10 bg-white transition hover:-translate-y-1 hover:shadow-xl"><div className="aspect-[0.9] overflow-hidden bg-[#f1eee8]">{product.image ? <img src={product.image} alt={product.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-xs text-black/35">No image</div>}</div><div className="p-3.5"><div className="line-clamp-2 min-h-10 text-sm font-semibold leading-5">{product.name}</div><div className="mt-3 flex items-center justify-between gap-2"><span className="text-sm font-bold">{formatMoney(product.price, brand.currency)}</span><span className="text-[10px] font-bold uppercase tracking-wider text-black/35">Explore</span></div></div></Link>)}</div> : <div className="mt-7 rounded-[24px] border border-dashed border-black/15 bg-white p-8 sm:p-12"><div className="mx-auto max-w-md text-center"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f3eadb] text-[#9b682d]"><ShoppingBag className="h-6 w-6" /></div><h3 className="mt-5 font-display text-xl font-bold">The collection is being curated</h3><p className="mt-2 text-sm leading-6 text-black/50">{tenant.status === "active" ? "This store is connected and ready for the owner’s real catalogue." : "The owner is finishing setup. Come back soon to see the first collection."}</p></div></div>}</section>
+        <section id="collection" className="mx-auto max-w-[1240px] px-5 pb-16 pt-8 sm:px-8 sm:pt-12"><div className="flex items-end justify-between gap-3"><div><div className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/35">The collection</div><h2 className="mt-1 font-display text-3xl font-bold tracking-tight">Pieces worth discovering</h2></div>{products.length ? <Link href="/shop" className="inline-flex items-center gap-1 text-sm font-bold text-black/55 hover:text-black">View all <ChevronRight className="h-4 w-4" /></Link> : null}</div>{products.length ? <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{products.map((product) => <Link key={product.id} href={`/products/${product.slug}`} className="group overflow-hidden rounded-2xl border border-black/10 bg-white transition hover:-translate-y-1 hover:shadow-xl"><div className="aspect-[0.9] overflow-hidden bg-[#f1eee8]">{product.image ? <img src={product.image} alt={product.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-xs text-black/35">No image</div>}</div><div className="p-3.5"><div className="line-clamp-2 min-h-10 text-sm font-semibold leading-5">{product.name}</div><div className="mt-3 flex items-center justify-between gap-2"><span className="text-sm font-bold">{formatMoney(product.price, brand.currency)}</span><span className="text-[10px] font-bold uppercase tracking-wider text-black/35">Explore</span></div></div></Link>)}</div> : <div className="mt-7 rounded-[24px] border border-dashed border-black/15 bg-white p-8 sm:p-12"><div className="mx-auto max-w-md text-center"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f3eadb] text-[#9b682d]"><ShoppingBag className="h-6 w-6" /></div><h3 className="mt-5 font-display text-xl font-bold">The collection is being curated</h3><p className="mt-2 text-sm leading-6 text-black/50">{tenant.status === "active" ? "This store is connected and ready for the owner’s real catalogue." : "The owner is finishing setup. Come back soon to see the first collection."}</p></div></div>}</section>
 
         <section id="story" className="border-y border-black/10 bg-white"><div className="mx-auto grid max-w-[1240px] gap-8 px-5 py-14 sm:px-8 lg:grid-cols-2 lg:items-center"><div><div className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/35">A little about us</div><h2 className="mt-2 font-display text-3xl font-bold leading-tight">Built around what matters to you.</h2><p className="mt-4 max-w-lg text-sm leading-6 text-black/55">{brand.tagline} We believe an online store should feel personal, move quickly and keep your information safe. Every detail here is shaped by the people behind {brand.storeName}.</p><a href="#support" className="mt-6 inline-flex items-center gap-2 text-sm font-bold hover:underline">Talk to us <ArrowRight className="h-4 w-4" /></a></div><div id="support" className="grid grid-cols-2 gap-3"><div className="rounded-2xl bg-[#f7f5f0] p-5"><div className="text-3xl font-bold">01</div><div className="mt-8 text-sm font-bold">Human support</div><div className="mt-1 text-xs leading-5 text-black/45">Questions answered by the team behind the brand.</div></div><div className="rounded-2xl bg-[#f7f5f0] p-5"><div className="text-3xl font-bold">02</div><div className="mt-8 text-sm font-bold">Thoughtful design</div><div className="mt-1 text-xs leading-5 text-black/45">A calm, considered way to shop online.</div></div></div></div></section>
       </main>
