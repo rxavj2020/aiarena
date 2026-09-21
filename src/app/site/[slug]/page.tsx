@@ -1,17 +1,9 @@
-import { notFound } from "next/navigation";
-import { getTenantBySlug } from "@/lib/platform";
-import { TenantStorefront } from "@/components/store/TenantStorefront";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const tenant = getTenantBySlug((await params).slug);
-  return tenant ? { title: tenant.name, description: tenant.tagline } : { title: "Store" };
-}
-
-/** Compatibility alias. New links use /store/[slug]. */
-export default async function CompatibilityStorePage({ params }: { params: Promise<{ slug: string }> }) {
-  const tenant = getTenantBySlug((await params).slug);
-  if (!tenant) notFound();
-  return <TenantStorefront tenant={tenant} />;
+/** Compatibility alias. Canonical websites live at /store/{slug}. */
+export default async function SiteAliasPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  redirect(`/store/${slug}`);
 }

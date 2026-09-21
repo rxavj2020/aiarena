@@ -29,11 +29,14 @@ export function Header({
   cartCount,
   user,
   categories,
+  homeHref = "/",
 }: {
   settings: StoreSettings;
   cartCount: number;
   user: SessionUser | null;
   categories: Category[];
+  /** This website's home — never the platform root. */
+  homeHref?: string;
 }) {
   const { wishlist, openCart, savedPincode } = useStore();
   const [mounted, setMounted] = useState(false);
@@ -71,7 +74,7 @@ export function Header({
                 <Menu className="h-5 w-5 text-[#212121]" />
               </button>
 
-              <Link href="/" className="flex items-center gap-2.5">
+              <Link href={homeHref} className="flex items-center gap-2.5">
                 {s.logoUrl ? (
                   <img src={s.logoUrl} alt={s.storeName} className="h-8 sm:h-9 w-auto object-contain" />
                 ) : (

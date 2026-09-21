@@ -38,7 +38,8 @@ export default async function StoreLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header settings={s} cartCount={count} user={session} categories={categories} />
+      {/* The logo returns to this website's home (`/store/aurelia`), not the platform root. */}
+      <Header settings={s} cartCount={count} user={session} categories={categories} homeHref="/store/aurelia" />
       <main className="flex-1 pb-16 md:pb-0">{children}</main>
       <Footer settings={s} pages={footerPages} categories={categories.filter((c) => !c.parentId).slice(0, 6)} />
 
