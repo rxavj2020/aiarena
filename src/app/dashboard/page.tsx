@@ -10,7 +10,8 @@ import { listTenantProducts, listTenantOrders } from "@/lib/tenant-firestore";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Store Dashboard" };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const sp = await searchParams;
   const session = await getSession();
   if (!session) {
     redirect("/platform/login?next=/dashboard");
@@ -127,6 +128,20 @@ export default async function DashboardPage() {
     .where(eq(schema.storeDomains.tenantId, tenant.id))
     .all();
 
+  // Overview stats + site theme for this workspace
+  const orderRows = db.select().from(schema.orders).where(eq(schema.orders.tenantId, tenant.id)).all();
+  const stats = {
+    revenue: orderRows.filter((o) => o.paymentStatus === "paid" || o.paymentStatus === "cod").reduce((a, o) => a + o.total, 0),
+    orderCount: orderRows.length,
+    productCount: allProducts.length,
+    lowStockCount: allProducts.filter((p) => p.status === "active" && p.stock <= 5).length,
+    pendingOrders: orderRows.filter((o) => ["pending", "confirmed", "processing"].includes(o.status)).length,
+  };
+  const { themeOfTenant } = await import("@/lib/tenant-site");
+  const siteTheme = themeOfTenant(tenant);
+  const settingsRow = db.select().from(schema.settings).where(eq(schema.settings.key, "store")).get();
+  const currency = (settingsRow?.value as { currency?: string } | null)?.currency ?? "INR";
+
   return (
     <DashboardClient
       user={session}
@@ -135,6 +150,10 @@ export default async function DashboardPage() {
       initialOrders={formattedOrders}
       plugins={plugins}
       domains={domains}
+      theme={siteTheme}
+      stats={stats}
+      initialTab={sp.tab}
+      currency={currency}
     />
   );
 }

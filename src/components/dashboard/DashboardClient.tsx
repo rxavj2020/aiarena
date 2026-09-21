@@ -23,6 +23,7 @@ import {
   AlertCircle,
   KeyRound,
   Eye,
+  LayoutDashboard,
 } from "lucide-react";
 import type { Tenant } from "@/lib/db/schema";
 import type { SessionUser } from "@/lib/auth";
@@ -40,6 +41,9 @@ import {
   testTenantPluginAction,
 } from "@/actions/tenant-plugins";
 import type { TenantPluginDefinition, TenantPluginState } from "@/lib/tenant-plugins";
+import { resolveTheme, type TenantTheme } from "@/lib/themes";
+import { ThemeEditor, type ThemeFormValue } from "./ThemeEditor";
+import { DashboardOverview, type DashboardStats } from "./DashboardOverview";
 
 type ProductItem = {
   id: string;
@@ -86,6 +90,10 @@ export function DashboardClient({
   initialOrders,
   plugins,
   domains,
+  theme,
+  stats,
+  initialTab,
+  currency = "INR",
 }: {
   user: SessionUser;
   tenant: Tenant;
@@ -93,15 +101,25 @@ export function DashboardClient({
   initialOrders: OrderItem[];
   plugins: PluginItem[];
   domains: DomainItem[];
+  theme: TenantTheme;
+  stats: DashboardStats;
+  initialTab?: string;
+  currency?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   // Tab navigation
   const isNewStore = tenant.status === "setup";
-  const [activeTab, setActiveTab] = useState<"setup" | "products" | "orders" | "plugins" | "settings">(
-    isNewStore ? "setup" : "products"
-  );
+  const TAB_IDS = ["overview", "setup", "products", "orders", "plugins", "settings"] as const;
+  type TabId = (typeof TAB_IDS)[number];
+  const normalizeTab = (t?: string): TabId =>
+    (TAB_IDS as readonly string[]).includes(t ?? "") ? (t as TabId) : isNewStore ? "setup" : "overview";
+  const [activeTab, setActiveTabState] = useState<TabId>(normalizeTab(initialTab));
+  const setActiveTab = (t: TabId) => {
+    setActiveTabState(t);
+    router.replace(`/dashboard?tab=${t}`, { scroll: false });
+  };
 
   // Status feedback toast
   const [notice, setNotice] = useState<{ ok: boolean; message: string } | null>(null);
@@ -112,14 +130,33 @@ export function DashboardClient({
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [productSearch, setProductSearch] = useState("");
 
-  // Brand Settings state
-  const [brandForm, setBrandForm] = useState({
+  // Brand Settings state (identity + site theme applied to every page of the website)
+  const [brandForm, setBrandForm] = useState<{ name: string; tagline: string; primaryColor: string; accentColor: string; logoUrl: string; theme: ThemeFormValue }>({
     name: tenant.name,
     tagline: tenant.tagline,
-    primaryColor: tenant.primaryColor,
-    accentColor: tenant.accentColor,
+    primaryColor: theme.primaryColor,
+    accentColor: theme.accentColor,
     logoUrl: tenant.logoUrl || "",
+    theme: {
+      preset: theme.preset,
+      appearance: theme.appearance,
+      radius: theme.radius,
+      font: theme.font,
+      primaryColor: theme.primaryColor,
+      accentColor: theme.accentColor,
+    },
   });
+  const setThemeForm = (patch: Partial<ThemeFormValue>) =>
+    setBrandForm((f) => {
+      const nextTheme = { ...f.theme, ...patch };
+      return {
+        ...f,
+        theme: nextTheme,
+        // Colours live in one place: the theme. Keep the swatches in sync.
+        primaryColor: patch.primaryColor ? patch.primaryColor : patch.preset ? nextTheme.primaryColor : f.primaryColor,
+        accentColor: patch.accentColor ? patch.accentColor : patch.preset ? nextTheme.accentColor : f.accentColor,
+      };
+    });
 
   // Domain form state
   const [domainHost, setDomainHost] = useState("");
@@ -229,9 +266,21 @@ export function DashboardClient({
   const handleSaveBrand = (e: React.FormEvent) => {
     e.preventDefault();
     startTransition(async () => {
-      const res = await updateWorkspaceBrand(tenant.id, brandForm);
+      const resolved: TenantTheme = resolveTheme({
+        ...brandForm.theme,
+        primaryColor: brandForm.primaryColor,
+        accentColor: brandForm.accentColor,
+      });
+      const res = await updateWorkspaceBrand(tenant.id, {
+        name: brandForm.name,
+        tagline: brandForm.tagline,
+        logoUrl: brandForm.logoUrl,
+        primaryColor: brandForm.primaryColor,
+        accentColor: brandForm.accentColor,
+        theme: resolved,
+      });
       if (res.ok) {
-        showToast(true, "Brand settings updated on your live store!");
+        showToast(true, "Brand & theme saved — every page of your website now uses them.");
         router.refresh();
       } else {
         showToast(false, res.error);
@@ -301,6 +350,16 @@ export function DashboardClient({
   const filteredProducts = productsList.filter((p) =>
     p.name.toLowerCase().includes(productSearch.toLowerCase())
   );
+
+  const navItems: { id: TabId; label: string; icon: typeof LayoutDashboard; badge?: number; pulse?: boolean }[] = [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    ...(isNewStore ? [{ id: "setup" as TabId, label: "Setup Guide", icon: Rocket, pulse: true }] : []),
+    { id: "products", label: "Products", icon: Package, badge: productsList.length },
+    { id: "orders", label: "Orders", icon: ShoppingCart, badge: initialOrders.length },
+    { id: "plugins", label: "Plugins", icon: Plug },
+    { id: "settings", label: "Settings", icon: Settings },
+    ...(!isNewStore ? [{ id: "setup" as TabId, label: "Launch / Setup", icon: Rocket }] : []),
+  ];
 
   return (
     <div className="min-h-screen bg-[#0f0f0e] text-white flex flex-col font-sans">
@@ -374,95 +433,61 @@ export function DashboardClient({
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex space-x-1 overflow-x-auto no-scrollbar border-t border-white/5">
-          {isNewStore && (
-            <button
-              onClick={() => setActiveTab("setup")}
-              className={`py-3 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition ${
-                activeTab === "setup"
-                  ? "border-[#e9c78d] text-[#e9c78d]"
-                  : "border-transparent text-white/50 hover:text-white"
-              }`}
-            >
-              <Rocket className="h-4 w-4" />
-              <span>Setup Guide</span>
-              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-            </button>
-          )}
-
-          <button
-            onClick={() => setActiveTab("products")}
-            className={`py-3 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition ${
-              activeTab === "products"
-                ? "border-[#e9c78d] text-[#e9c78d]"
-                : "border-transparent text-white/50 hover:text-white"
-            }`}
-          >
-            <Package className="h-4 w-4" />
-            <span>Products</span>
-            <span className="rounded-full bg-white/10 px-1.5 py-0.2 text-[10px] text-white/60">
-              {productsList.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("orders")}
-            className={`py-3 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition ${
-              activeTab === "orders"
-                ? "border-[#e9c78d] text-[#e9c78d]"
-                : "border-transparent text-white/50 hover:text-white"
-            }`}
-          >
-            <ShoppingCart className="h-4 w-4" />
-            <span>Orders</span>
-            <span className="rounded-full bg-white/10 px-1.5 py-0.2 text-[10px] text-white/60">
-              {initialOrders.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("plugins")}
-            className={`py-3 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition ${
-              activeTab === "plugins"
-                ? "border-[#e9c78d] text-[#e9c78d]"
-                : "border-transparent text-white/50 hover:text-white"
-            }`}
-          >
-            <Plug className="h-4 w-4" />
-            <span>Plugins</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("settings")}
-            className={`py-3 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition ${
-              activeTab === "settings"
-                ? "border-[#e9c78d] text-[#e9c78d]"
-                : "border-transparent text-white/50 hover:text-white"
-            }`}
-          >
-            <Settings className="h-4 w-4" />
-            <span>Settings</span>
-          </button>
-
-          {!isNewStore && (
-            <button
-              onClick={() => setActiveTab("setup")}
-              className={`py-3 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition ${
-                activeTab === "setup"
-                  ? "border-[#e9c78d] text-[#e9c78d]"
-                  : "border-transparent text-white/50 hover:text-white"
-              }`}
-            >
-              <Rocket className="h-4 w-4" />
-              <span>Launch / Setup</span>
-            </button>
-          )}
-        </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex flex-1 min-h-0">
+        {/* Sidebar navigation */}
+        <aside className="hidden lg:flex w-[230px] shrink-0 flex-col gap-1 border-r border-white/5 p-4 sticky top-[65px] self-start h-[calc(100vh-65px)]">
+          <nav className="flex flex-col gap-1">
+            {navItems.map((n) => (
+              <button
+                key={n.id}
+                onClick={() => setActiveTab(n.id)}
+                className={`flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition text-left ${
+                  activeTab === n.id ? "bg-white text-[#0f0f0e] shadow-sm" : "text-white/55 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <n.icon className="h-[17px] w-[17px] shrink-0" />
+                <span className="flex-1">{n.label}</span>
+                {typeof n.badge === "number" && n.badge > 0 ? (
+                  <span className={`text-[10px] font-bold rounded-full px-1.5 py-0.5 ${activeTab === n.id ? "bg-black/10" : "bg-white/10 text-white/60"}`}>{n.badge}</span>
+                ) : null}
+                {n.pulse ? <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" /> : null}
+              </button>
+            ))}
+          </nav>
+          <div className="mt-auto px-3 pt-4 text-[10px] uppercase tracking-widest text-white/25">Private store admin</div>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 min-w-0 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-8">
+        {/* Mobile tab row */}
+        <div className="lg:hidden -mx-4 mb-4 px-4 flex gap-1 overflow-x-auto no-scrollbar border-b border-white/5 pb-2">
+          {navItems.map((n) => (
+            <button
+              key={n.id}
+              onClick={() => setActiveTab(n.id)}
+              className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-bold transition inline-flex items-center gap-1.5 ${
+                activeTab === n.id ? "bg-[#e9c78d] text-[#11110f]" : "bg-white/5 text-white/55"
+              }`}
+            >
+              <n.icon className="h-3.5 w-3.5" /> {n.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ======================= TAB: OVERVIEW ======================= */}
+        {activeTab === "overview" && (
+          <DashboardOverview
+            tenant={tenant}
+            stats={stats}
+            orders={initialOrders}
+            currency={currency}
+            isNewStore={isNewStore}
+            onTab={(t) => setActiveTab(normalizeTab(t))}
+          />
+        )}
+
         {/* ======================= TAB: SETUP ======================= */}
         {activeTab === "setup" && (
           <div className="space-y-6 max-w-4xl mx-auto">
@@ -902,7 +927,7 @@ export function DashboardClient({
           <div className="space-y-6 max-w-3xl mx-auto">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Store Settings</h1>
-              <p className="text-xs text-white/50 mt-0.5">Manage domain, store availability and brand styling.</p>
+              <p className="text-xs text-white/50 mt-0.5">Manage domain, store availability, brand and the theme used on every page of your website.</p>
             </div>
 
             {/* Store Status Toggle */}
@@ -929,8 +954,8 @@ export function DashboardClient({
 
             {/* Brand Settings */}
             <div className="rounded-3xl border border-white/10 bg-[#161614] p-6">
-              <h2 className="text-base font-bold mb-1">Brand Information</h2>
-              <p className="text-xs text-white/50 mb-5">Your storefront colors and details.</p>
+              <h2 className="text-base font-bold mb-1">Brand & Theme</h2>
+              <p className="text-xs text-white/50 mb-5">Identity and look — saved here, applied to every page of your website.</p>
 
               <form onSubmit={handleSaveBrand} className="space-y-4">
                 <div>
@@ -990,13 +1015,17 @@ export function DashboardClient({
                   </div>
                 </div>
 
+                <div className="pt-2">
+                  <ThemeEditor value={brandForm.theme} onChange={setThemeForm} />
+                </div>
+
                 <div className="flex justify-end pt-2">
                   <button
                     type="submit"
                     disabled={pending}
                     className="rounded-xl bg-[#e9c78d] px-5 py-2.5 text-xs font-bold text-[#11110f] hover:bg-[#f3d7a8] transition"
                   >
-                    Save Changes
+                    Save Brand & Theme
                   </button>
                 </div>
               </form>
@@ -1048,6 +1077,7 @@ export function DashboardClient({
           </div>
         )}
       </main>
+      </div>
 
       {/* ======================= MODAL: ADD/EDIT PRODUCT ======================= */}
       {isProductModalOpen && editingProduct && (

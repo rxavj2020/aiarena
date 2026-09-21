@@ -38,6 +38,7 @@ const brandSchema = z.object({
   logoUrl: z.string().trim().max(2000).optional().or(z.literal("")),
   primaryColor: z.string().regex(/^#[0-9a-f]{6}$/i, "Use a six-digit hex colour"),
   accentColor: z.string().regex(/^#[0-9a-f]{6}$/i, "Use a six-digit hex colour"),
+  theme: z.record(z.string(), z.unknown()).optional(),
 });
 
 const firestoreSchema = z.object({
@@ -71,12 +72,21 @@ export async function createWorkspace(input: { name: string; slug: string; plan:
   });
 }
 
-export async function saveWorkspaceBranding(tenantId: string, input: { name: string; tagline: string; logoUrl?: string; primaryColor: string; accentColor: string }): Promise<PlatformResult> {
+export async function saveWorkspaceBranding(tenantId: string, input: { name: string; tagline: string; logoUrl?: string; primaryColor: string; accentColor: string; theme?: Record<string, unknown> }): Promise<PlatformResult> {
   return wrap(async () => {
     await requireWorkspaceAccess(tenantId);
     const parsed = brandSchema.safeParse(input);
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-    db.update(schema.tenants).set({ ...parsed.data, logoUrl: parsed.data.logoUrl || null, updatedAt: new Date().toISOString() }).where(eq(schema.tenants.id, tenantId)).run();
+    const { theme, ...brand } = parsed.data;
+    db.update(schema.tenants)
+      .set({
+        ...brand,
+        logoUrl: brand.logoUrl || null,
+        ...(theme ? { theme } : {}),
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(schema.tenants.id, tenantId))
+      .run();
     revalidatePath("/dashboard");
     revalidatePath("/platform", "layout");
     revalidatePath(`/store/${getTenantById(tenantId)?.slug ?? ""}`);
@@ -84,7 +94,7 @@ export async function saveWorkspaceBranding(tenantId: string, input: { name: str
   });
 }
 
-export async function updateWorkspaceBrand(tenantId: string, input: { name: string; tagline: string; logoUrl?: string; primaryColor: string; accentColor: string }): Promise<PlatformResult> {
+export async function updateWorkspaceBrand(tenantId: string, input: { name: string; tagline: string; logoUrl?: string; primaryColor: string; accentColor: string; theme?: Record<string, unknown> }): Promise<PlatformResult> {
   return saveWorkspaceBranding(tenantId, input);
 }
 

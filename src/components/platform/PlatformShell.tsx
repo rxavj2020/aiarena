@@ -26,10 +26,10 @@ export function PlatformShell({ children, current }: { children: React.ReactNode
             </Link>
             {current ? (
               <>
-                <Link href="/admin/settings" className="flex items-center gap-3 rounded-xl px-3 py-3 text-white/70 transition hover:bg-white/10 hover:text-white">
+                <Link href="/dashboard?tab=settings" className="flex items-center gap-3 rounded-xl px-3 py-3 text-white/70 transition hover:bg-white/10 hover:text-white">
                   <Settings2 className="h-[17px] w-[17px]" /> Store settings
                 </Link>
-                <Link href="/admin/plugins" className="flex items-center gap-3 rounded-xl px-3 py-3 text-white/70 transition hover:bg-white/10 hover:text-white">
+                <Link href="/dashboard?tab=plugins" className="flex items-center gap-3 rounded-xl px-3 py-3 text-white/70 transition hover:bg-white/10 hover:text-white">
                   <Plug className="h-[17px] w-[17px]" /> Plugins & integrations
                 </Link>
               </>
@@ -67,7 +67,7 @@ export function PlatformShell({ children, current }: { children: React.ReactNode
         <div className="space-y-1 border-t border-white/10 p-4 text-sm">
           {current ? (
             <>
-              <Link href="/admin" className="flex items-center gap-3 rounded-xl px-3 py-3 text-white/70 transition hover:bg-white/10 hover:text-white"><LayoutDashboard className="h-4 w-4" /> Open store admin</Link>
+              <Link href="/dashboard" className="flex items-center gap-3 rounded-xl px-3 py-3 text-white/70 transition hover:bg-white/10 hover:text-white"><LayoutDashboard className="h-4 w-4" /> Open store admin</Link>
               <Link href={`/store/${current.slug}`} target="_blank" className="flex items-center gap-3 rounded-xl px-3 py-3 text-white/70 transition hover:bg-white/10 hover:text-white"><ExternalLink className="h-4 w-4" /> View public site</Link>
             </>
           ) : null}
@@ -85,7 +85,7 @@ export function PlatformShell({ children, current }: { children: React.ReactNode
             <div className="hidden text-sm text-black/45 lg:block">Your store control plane</div>
             <div className="ml-auto flex items-center gap-2">
               {current ? <span className="hidden rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold sm:inline-flex">{current.name}</span> : null}
-              {current ? <Link href="/admin" className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold transition hover:border-black/30">Open admin</Link> : null}
+              {current ? <Link href="/dashboard" className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold transition hover:border-black/30">Open admin</Link> : null}
             </div>
           </div>
         </header>
