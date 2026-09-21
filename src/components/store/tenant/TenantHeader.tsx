@@ -5,15 +5,17 @@ import { siteHref, type TenantSite } from "@/lib/tenant-site";
 import type { Appearance } from "@/lib/themes";
 
 /**
- * Chrome of one tenant website. The logo always returns to *this* website's
- * home — it never navigates to the Aurelia platform.
+ * Chrome of one tenant website — the header wears Colour 1 · FRAME.
+ * The logo always returns to *this* website's home — it never navigates to
+ * the Aurelia platform.
  */
-export function TenantHeader({ site, cartCount, appearance }: { site: TenantSite; cartCount: number; appearance: Appearance }) {
+export function TenantHeader({ site, cartCount, appearance, announcement }: { site: TenantSite; cartCount: number; appearance: Appearance; announcement?: string }) {
   const { basePath: base, name, tagline, logoUrl } = site;
   const home = siteHref(base, "/");
 
   return (
     <header className="s-header">
+      {announcement ? <div className="s-announce">{announcement}</div> : null}
       <div className="s-container s-header-row">
         <Link href={home} className="s-brand" aria-label={`${name} home`}>
           {logoUrl ? (

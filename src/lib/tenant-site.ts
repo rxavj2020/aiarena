@@ -46,12 +46,13 @@ export type TenantSite = {
 
 /** Link inside a website: `siteHref("/store/my-shop", "/shop")` → `/store/my-shop/shop`. */
 export function themeOfTenant(tenant: schema.Tenant): TenantTheme {
-  const colors = { primaryColor: tenant.primaryColor, accentColor: tenant.accentColor };
-  try {
-    return resolveTheme({ ...themeFromJson(tenant.theme), ...colors });
-  } catch {
-    return resolveTheme(colors);
-  }
+  // The tenant columns mirror Colour 1 (frame) and Colour 2 (ground); the theme
+  // JSON carries the full role trio (legacy colours are mapped by resolveTheme).
+  return resolveTheme({
+    ...themeFromJson(tenant.theme),
+    frameColor: tenant.primaryColor || undefined,
+    groundColor: tenant.accentColor || undefined,
+  });
 }
 
 export const getTenantSite = cache(async (slug: string): Promise<TenantSite | null> => {
@@ -108,7 +109,7 @@ function firestoreProductToSite(p: TenantProduct): SiteProduct {
  * connected Firestore and has no local catalogue, their mirrored products are
  * shown. The legacy demo workspace falls back to the seeded catalogue.
  */
-export async function listSiteProducts(tenantId: string, opts?: { limit?: number; search?: string; sort?: "newest" | "price-asc" | "price-desc" | "discount" }): Promise<SiteProduct[]> {
+export async function listSiteProducts(tenantId: string, opts?: { limit?: number; search?: string; category?: string; sort?: "newest" | "price-asc" | "price-desc" | "discount" }): Promise<SiteProduct[]> {
   const limit = opts?.limit ?? 24;
   let items: SiteProduct[] = db
     .select()
@@ -131,6 +132,20 @@ export async function listSiteProducts(tenantId: string, opts?: { limit?: number
       .orderBy(desc(schema.products.createdAt))
       .all()
       .map(dbProductToSite);
+  }
+
+  // Category browse (DB products carry a categoryId; mirrored products fall back to a name match)
+  const catSlug = opts?.category?.trim().toLowerCase();
+  if (catSlug) {
+    const cat = db.select().from(schema.categories).where(eq(schema.categories.slug, catSlug)).get();
+    if (cat) {
+      const ids = [cat.id, ...db.select({ id: schema.categories.id }).from(schema.categories).where(eq(schema.categories.parentId, cat.id)).all().map((c) => c.id)];
+      const byName = cat.name.toLowerCase();
+      items = items.filter((p) => {
+        const row = db.select({ categoryId: schema.products.categoryId }).from(schema.products).where(eq(schema.products.id, p.id)).get();
+        return row ? ids.includes(row.categoryId ?? "") : p.name.toLowerCase().includes(byName);
+      });
+    }
   }
 
   const q = opts?.search?.trim().toLowerCase();

@@ -14,5 +14,5 @@ export default async function TenantHomePage({ params }: { params: Promise<{ slu
   const site = await getTenantSite((await params).slug);
   if (!site) notFound();
   const settings = await getSettings();
-  return <TenantHome site={site} currency={settings.currency} />;
+  return <TenantHome site={site} settings={settings} />;
 }

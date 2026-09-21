@@ -1,61 +1,53 @@
 "use client";
 
-import { THEME_PRESETS, type Appearance, type ThemeColorMode, type ThemeFont, type ThemePresetId, type ThemeRadius } from "@/lib/themes";
+import { THEME_PRESETS, ROLE_LABELS, ROLE_ORDER, type Appearance, type ThemeFont, type ThemePresetId, type ThemeRadius, readableInk } from "@/lib/themes";
 
 export type ThemeFormValue = {
   preset: ThemePresetId;
   appearance: Appearance;
-  colorMode: ThemeColorMode;
+  frameColor: string;
+  groundColor: string;
+  actionColor: string;
   radius: ThemeRadius;
   font: ThemeFont;
-  primaryColor: string;
-  accentColor: string;
-  tertiaryColor: string;
 };
 
 /**
- * Owner-side theme editor. Supports two-colour and three-colour palettes —
- * the colour mode saved here drives the whole website's look (solid surfaces
- * for duo themes, flowing tri-colour gradients for trio themes).
+ * Owner-side "Role Trio" editor: three colour codes, each owning groups of
+ * components — Colour 1 header & frame, Colour 2 footer & sections, Colour 3
+ * buttons & links. The preview shows the exact component mapping.
  */
 export function ThemeEditor({ value, onChange }: { value: ThemeFormValue; onChange: (patch: Partial<ThemeFormValue>) => void }) {
   const preset = THEME_PRESETS.find((p) => p.id === value.preset) ?? THEME_PRESETS[0];
-  const trio = value.colorMode === "three";
-  const dots = trio ? [value.primaryColor, value.accentColor, value.tertiaryColor] : [value.primaryColor, value.accentColor];
-  const previewGradient = trio
-    ? `linear-gradient(95deg, ${value.primaryColor} 0%, ${value.accentColor} 55%, ${value.tertiaryColor} 130%)`
-    : `linear-gradient(95deg, ${value.primaryColor} 0%, ${value.accentColor} 130%)`;
+  const roleColors: Record<string, string> = { frame: value.frameColor, ground: value.groundColor, action: value.actionColor };
+  const radius = value.radius === "sharp" ? 3 : value.radius === "round" ? 999 : 8;
 
   return (
     <div className="space-y-5">
       <div>
-        <label className="block text-xs font-semibold text-white/70 mb-2">Colour style</label>
-        <div className="flex gap-2">
-          {([
-            { id: "two" as ThemeColorMode, label: "Two colours", hint: "Primary + accent, clean and solid" },
-            { id: "three" as ThemeColorMode, label: "Three colours", hint: "Trending tri-colour gradients" },
-          ]).map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => onChange({ colorMode: m.id, ...(m.id === "three" && !value.tertiaryColor ? { tertiaryColor: preset.tertiaryColor } : {}) })}
-              className={`flex-1 rounded-xl border p-3 text-left transition ${value.colorMode === m.id ? "border-[#e9c78d] bg-[#e9c78d]/10" : "border-white/10 bg-white/5 hover:border-white/25"}`}
-            >
-              <div className="flex items-center gap-1.5 mb-1.5">
-                {(m.id === "three" ? [value.primaryColor, value.accentColor, value.tertiaryColor || "#888"] : [value.primaryColor, value.accentColor]).map((c, i) => (
-                  <span key={i} className="h-3.5 w-3.5 rounded-full" style={{ background: c }} />
-                ))}
+        <label className="block text-xs font-semibold text-white/70 mb-2">Your three colours</label>
+        <div className="space-y-2">
+          {ROLE_ORDER.map((role) => {
+            const meta = ROLE_LABELS[role];
+            const hex = roleColors[role];
+            return (
+              <div key={role} className="rounded-xl border border-white/10 bg-white/5 p-3 flex items-center gap-3">
+                <input type="color" value={hex} onChange={(e) => onChange({ [`${role}Color`]: e.target.value } as Partial<ThemeFormValue>)} className="h-10 w-14 rounded border-0 bg-transparent cursor-pointer shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-white">{meta.swatch} · {meta.title}</div>
+                  <div className="text-[10px] text-white/40">{meta.usedBy}</div>
+                </div>
+                <input type="text" value={hex} onChange={(e) => onChange({ [`${role}Color`]: e.target.value } as Partial<ThemeFormValue>)} className="w-24 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-xs font-mono text-white outline-none" />
               </div>
-              <div className="text-xs font-bold text-white">{m.label}</div>
-              <div className="text-[10px] text-white/40">{m.hint}</div>
-            </button>
-          ))}
+            );
+          })}
         </div>
+        <p className="text-[11px] text-white/35 mt-1.5">Any three hex codes work — body, cards and text tones are derived automatically to keep the site harmonious.</p>
       </div>
 
       <div>
         <label className="block text-xs font-semibold text-white/70 mb-2">Theme preset</label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {THEME_PRESETS.map((p) => {
             const active = value.preset === p.id;
             return (
@@ -65,57 +57,27 @@ export function ThemeEditor({ value, onChange }: { value: ThemeFormValue; onChan
                 onClick={() =>
                   onChange({
                     preset: p.id,
-                    colorMode: p.colorMode,
-                    primaryColor: p.primaryColor,
-                    accentColor: p.accentColor,
-                    tertiaryColor: p.tertiaryColor,
+                    frameColor: p.frameColor,
+                    groundColor: p.groundColor,
+                    actionColor: p.actionColor,
                     radius: p.radius,
                     font: p.font,
                     appearance: p.appearance,
                   })
                 }
-                className={`rounded-xl border p-3 text-left transition ${active ? "border-[#e9c78d] bg-[#e9c78d]/10" : "border-white/10 bg-white/5 hover:border-white/25"}`}
+                className={`rounded-xl border p-2.5 text-left transition ${active ? "border-[#e9c78d] bg-[#e9c78d]/10" : "border-white/10 bg-white/5 hover:border-white/25"}`}
               >
-                <div className="flex items-center gap-1 mb-2">
-                  {(p.colorMode === "three" ? [p.primaryColor, p.accentColor, p.tertiaryColor] : [p.primaryColor, p.accentColor]).map((c, i) => (
-                    <span key={i} className="h-4 w-4 rounded-full" style={{ background: c }} />
+                <div className="flex items-center gap-1 mb-1.5">
+                  {[p.frameColor, p.groundColor, p.actionColor].map((c, i) => (
+                    <span key={i} className="h-3.5 w-3.5 rounded-full" style={{ background: c }} title={ROLE_LABELS[ROLE_ORDER[i]].title} />
                   ))}
-                  <span className={`ml-auto text-[9px] font-bold uppercase tracking-wider ${active ? "text-[#e9c78d]" : "text-white/30"}`}>
-                    {p.colorMode === "three" ? "3-col" : "2-col"}
-                  </span>
                 </div>
-                <div className="text-xs font-bold text-white">{p.label}</div>
-                <div className="text-[10px] leading-snug text-white/40 mt-0.5">{p.blurb}</div>
+                <div className="text-[11px] font-bold text-white">{p.label}</div>
+                <div className="text-[9.5px] leading-snug text-white/35 mt-0.5 line-clamp-2">{p.blurb}</div>
               </button>
             );
           })}
         </div>
-      </div>
-
-      <div className="grid gap-4" style={{ gridTemplateColumns: trio ? "1fr 1fr 1fr" : "1fr 1fr" }}>
-        <div>
-          <label className="block text-xs font-semibold text-white/70 mb-1.5">Primary</label>
-          <div className="flex items-center gap-2">
-            <input type="color" value={value.primaryColor} onChange={(e) => onChange({ primaryColor: e.target.value })} className="h-9 w-12 rounded border-0 bg-transparent cursor-pointer" />
-            <input type="text" value={value.primaryColor} onChange={(e) => onChange({ primaryColor: e.target.value })} className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-mono text-white outline-none" />
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-white/70 mb-1.5">Accent</label>
-          <div className="flex items-center gap-2">
-            <input type="color" value={value.accentColor} onChange={(e) => onChange({ accentColor: e.target.value })} className="h-9 w-12 rounded border-0 bg-transparent cursor-pointer" />
-            <input type="text" value={value.accentColor} onChange={(e) => onChange({ accentColor: e.target.value })} className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-mono text-white outline-none" />
-          </div>
-        </div>
-        {trio ? (
-          <div>
-            <label className="block text-xs font-semibold text-white/70 mb-1.5">Third</label>
-            <div className="flex items-center gap-2">
-              <input type="color" value={value.tertiaryColor} onChange={(e) => onChange({ tertiaryColor: e.target.value })} className="h-9 w-12 rounded border-0 bg-transparent cursor-pointer" />
-              <input type="text" value={value.tertiaryColor} onChange={(e) => onChange({ tertiaryColor: e.target.value })} className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-mono text-white outline-none" />
-            </div>
-          </div>
-        ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -154,51 +116,45 @@ export function ThemeEditor({ value, onChange }: { value: ThemeFormValue; onChan
         <p className="text-[11px] text-white/35 mt-1.5">A shopper&apos;s choice is remembered across every page of your website.</p>
       </div>
 
-      {/* Live preview of the website theme */}
+      {/* Live preview — the component → colour mapping, exactly like the site */}
       <div>
-        <label className="block text-xs font-semibold text-white/70 mb-1.5">Preview</label>
+        <label className="block text-xs font-semibold text-white/70 mb-1.5">Preview (header · footer · buttons)</label>
         <div
           className="rounded-2xl border border-white/10 overflow-hidden"
-          style={{ background: value.appearance === "dark" ? "#131311" : "#faf9f6", color: value.appearance === "dark" ? "#f2f0ea" : "#171715", fontFamily: value.font === "serif" ? "Georgia, serif" : value.font === "display" ? "'Plus Jakarta Sans', sans-serif" : "Inter, sans-serif" }}
+          style={{ background: `color-mix(in srgb, ${value.groundColor} 6%, #ffffff)`, color: `color-mix(in srgb, ${value.groundColor} 28%, #12110f)`, fontFamily: value.font === "serif" ? "Georgia, serif" : value.font === "display" ? "'Plus Jakarta Sans', sans-serif" : "Inter, sans-serif" }}
         >
-          {/* Palette stripe — 2 or 3 colour blocks */}
-          <div className="h-1.5 flex">
-            {dots.map((c, i) => (
+          {/* Header mock — Colour 1 */}
+          <div className="flex items-center justify-between px-4 py-3" style={{ background: value.frameColor, color: readableInk(value.frameColor) }}>
+            <div className="flex items-center gap-2">
+              <span className="h-7 w-7 flex items-center justify-center text-xs font-bold" style={{ background: value.actionColor, color: readableInk(value.actionColor), borderRadius: radius }}>A</span>
+              <span className="text-sm font-bold">Your store</span>
+            </div>
+            <span className="px-3 py-1.5 text-[10px] font-bold rounded-full" style={{ background: value.actionColor, color: readableInk(value.actionColor) }}>Cart</span>
+          </div>
+          {/* Palette stripe — the three roles in order */}
+          <div className="h-1 flex">
+            {[value.frameColor, value.groundColor, value.actionColor].map((c, i) => (
               <span key={i} className="flex-1" style={{ background: c }} />
             ))}
           </div>
+          {/* Body mock — derived cream + heading in Colour 2 */}
           <div className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="h-7 w-7 flex items-center justify-center text-xs font-bold" style={{ background: value.primaryColor, color: readable(value.primaryColor), borderRadius: value.radius === "round" ? 10 : 4 }}>A</span>
-                <span className="text-sm font-bold">Your store</span>
-              </div>
-              <span className="text-[10px] px-2 py-1 rounded-full font-bold" style={{ background: trio ? previewGradient : value.accentColor, color: readable(value.accentColor) }}>New</span>
-            </div>
-            <div className="mt-3 text-base font-bold" style={{ fontFamily: "inherit" }}>A storefront that feels like you.</div>
-            <div className="mt-1 text-[11px] opacity-60">{trio ? "Three-colour gradient theme" : "Two-colour theme"} — every page keeps it automatically.</div>
+            <div className="text-base font-bold" style={{ color: value.groundColor }}>A storefront that feels like you.</div>
+            <div className="mt-1 text-[11px] opacity-60">Headings & footer wear Colour 2 — buttons & links wear Colour 3.</div>
             <div className="mt-3 flex gap-2">
-              <span className="px-3 py-1.5 text-[11px] font-bold" style={{ background: trio ? previewGradient : value.primaryColor, color: readable(value.primaryColor), borderRadius: value.radius === "sharp" ? 3 : value.radius === "round" ? 999 : 6 }}>Shop now</span>
-              <span className="px-3 py-1.5 text-[11px] font-bold" style={{ background: value.accentColor, color: readable(value.accentColor), borderRadius: value.radius === "sharp" ? 3 : value.radius === "round" ? 999 : 6 }}>Deals</span>
-              {trio ? (
-                <span className="px-3 py-1.5 text-[11px] font-bold" style={{ background: value.tertiaryColor, color: readable(value.tertiaryColor), borderRadius: value.radius === "sharp" ? 3 : value.radius === "round" ? 999 : 6 }}>Gift</span>
-              ) : null}
+              <span className="px-3 py-1.5 text-[11px] font-bold" style={{ background: value.actionColor, color: readableInk(value.actionColor), borderRadius: radius }}>Shop now</span>
+              <span className="px-3 py-1.5 text-[11px] font-bold" style={{ background: value.frameColor, color: readableInk(value.frameColor), borderRadius: radius }}>Call us</span>
+              <span className="px-3 py-1.5 text-[11px] font-bold underline" style={{ color: value.actionColor }}>View all</span>
             </div>
           </div>
+          {/* Footer mock — Colour 2 */}
+          <div className="px-4 py-3 flex items-center justify-between" style={{ background: value.groundColor, color: readableInk(value.groundColor) }}>
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: value.actionColor }}>Support</span>
+            <span className="text-[10px] opacity-70">© Your store</span>
+          </div>
         </div>
-        <p className="text-[11px] text-white/35 mt-1.5">{preset.label} · {trio ? "3 colours" : "2 colours"}</p>
+        <p className="text-[11px] text-white/35 mt-1.5">{preset.label} · header = Colour 1 · footer & headings = Colour 2 · buttons = Colour 3</p>
       </div>
     </div>
   );
-}
-
-function readable(hex: string): string {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
-  if (!m) return "#fff";
-  const n = parseInt(m[1], 16);
-  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.45 ? "#141412" : "#fff";
 }

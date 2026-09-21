@@ -17,26 +17,28 @@ export default async function TenantShopPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ q?: string; sort?: string }>;
+  searchParams: Promise<{ q?: string; sort?: string; category?: string }>;
 }) {
   const [{ slug }, sp] = await Promise.all([params, searchParams]);
   const site = await getTenantSite(slug);
   if (!site) notFound();
   const settings = await getSettings();
   const sort = (["newest", "price-asc", "price-desc", "discount"] as const).includes(sp.sort as never) ? (sp.sort as "newest" | "price-asc" | "price-desc" | "discount") : "newest";
-  const products = await listSiteProducts(site.tenant.id, { limit: 48, search: sp.q, sort });
+  const products = await listSiteProducts(site.tenant.id, { limit: 48, search: sp.q, category: sp.category, sort });
   const base = site.basePath;
+  const categoryLabel = sp.category ? sp.category.replace(/-/g, " ") : null;
 
   return (
     <div className="s-container s-section">
       <Link href={siteHref(base, "/")} className="s-link s-link-back"><ArrowLeft className="h-4 w-4" /> Back home</Link>
       <div className="s-section-head">
         <div>
-          <div className="s-eyebrow">The collection</div>
-          <h1 className="s-h1">All products</h1>
+          <div className="s-eyebrow">{categoryLabel ?? "The collection"}</div>
+          <h1 className="s-h1">{categoryLabel ? categoryLabel.replace(/\b\w/g, (c) => c.toUpperCase()) : "All products"}</h1>
         </div>
         <form className="s-sort" action={siteHref(base, "/shop")}>
           {sp.q ? <input type="hidden" name="q" value={sp.q} /> : null}
+          {sp.category ? <input type="hidden" name="category" value={sp.category} /> : null}
           <select name="sort" defaultValue={sort} className="s-input s-input-sm" aria-label="Sort products">
             <option value="newest">Newest</option>
             <option value="price-asc">Price: low to high</option>
@@ -56,8 +58,8 @@ export default async function TenantShopPage({
       ) : (
         <div className="s-empty">
           <h3 className="s-h3">Nothing here yet</h3>
-          <p className="s-note">{sp.q ? "Try a different search." : "The collection is being curated. Check back soon."}</p>
-          {sp.q ? <Link href={siteHref(base, "/shop")} className="s-btn s-btn-primary">Clear search</Link> : null}
+          <p className="s-note">{sp.q || sp.category ? "Try a different filter." : "The collection is being curated. Check back soon."}</p>
+          {(sp.q || sp.category) ? <Link href={siteHref(base, "/shop")} className="s-btn s-btn-primary">Show all products</Link> : null}
         </div>
       )}
     </div>

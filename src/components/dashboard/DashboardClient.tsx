@@ -130,22 +130,21 @@ export function DashboardClient({
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [productSearch, setProductSearch] = useState("");
 
-  // Brand Settings state (identity + site theme applied to every page of the website)
+  // Brand Settings state (identity + "Role Trio" theme applied site-wide)
   const [brandForm, setBrandForm] = useState<{ name: string; tagline: string; primaryColor: string; accentColor: string; logoUrl: string; theme: ThemeFormValue }>({
     name: tenant.name,
     tagline: tenant.tagline,
-    primaryColor: theme.primaryColor,
-    accentColor: theme.accentColor,
+    primaryColor: theme.frameColor,
+    accentColor: theme.groundColor,
     logoUrl: tenant.logoUrl || "",
     theme: {
       preset: theme.preset,
       appearance: theme.appearance,
-      colorMode: theme.colorMode,
+      frameColor: theme.frameColor,
+      groundColor: theme.groundColor,
+      actionColor: theme.actionColor,
       radius: theme.radius,
       font: theme.font,
-      primaryColor: theme.primaryColor,
-      accentColor: theme.accentColor,
-      tertiaryColor: theme.tertiaryColor,
     },
   });
   const setThemeForm = (patch: Partial<ThemeFormValue>) =>
@@ -154,9 +153,10 @@ export function DashboardClient({
       return {
         ...f,
         theme: nextTheme,
-        // Colours live in one place: the theme. Keep the brand fields in sync.
-        primaryColor: nextTheme.primaryColor,
-        accentColor: nextTheme.accentColor,
+        // Colours live in one place: the theme. The legacy brand columns mirror
+        // Colour 1 (frame) and Colour 2 (ground).
+        primaryColor: nextTheme.frameColor,
+        accentColor: nextTheme.groundColor,
       };
     });
 
@@ -268,19 +268,14 @@ export function DashboardClient({
   const handleSaveBrand = (e: React.FormEvent) => {
     e.preventDefault();
     startTransition(async () => {
-      const resolved: TenantTheme = resolveTheme({
-        ...brandForm.theme,
-        primaryColor: brandForm.theme.primaryColor,
-        accentColor: brandForm.theme.accentColor,
-        tertiaryColor: brandForm.theme.tertiaryColor,
-      });
+      const resolved: TenantTheme = resolveTheme(brandForm.theme);
       const res = await updateWorkspaceBrand(tenant.id, {
         name: brandForm.name,
         tagline: brandForm.tagline,
         logoUrl: brandForm.logoUrl,
-        primaryColor: brandForm.primaryColor,
-        accentColor: brandForm.accentColor,
-        theme: resolved,
+        primaryColor: resolved.frameColor,
+        accentColor: resolved.groundColor,
+        theme: { ...resolved },
       });
       if (res.ok) {
         showToast(true, "Brand & theme saved — every page of your website now uses them.");
@@ -564,39 +559,26 @@ export function DashboardClient({
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-white/70 mb-1.5">Primary Color (Hex)</label>
+                    <label className="block text-xs font-semibold text-white/70 mb-1.5">Colour 1 · Header</label>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={brandForm.primaryColor}
-                        onChange={(e) => setBrandForm({ ...brandForm, primaryColor: e.target.value })}
-                        className="h-9 w-12 rounded border-0 bg-transparent cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={brandForm.primaryColor}
-                        onChange={(e) => setBrandForm({ ...brandForm, primaryColor: e.target.value })}
-                        className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm font-mono text-white outline-none focus:border-[#e9c78d]"
-                      />
+                      <input type="color" value={brandForm.theme.frameColor} onChange={(e) => setThemeForm({ frameColor: e.target.value })} className="h-9 w-12 rounded border-0 bg-transparent cursor-pointer" />
+                      <input type="text" value={brandForm.theme.frameColor} onChange={(e) => setThemeForm({ frameColor: e.target.value })} className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm font-mono text-white outline-none focus:border-[#e9c78d]" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-white/70 mb-1.5">Accent Color (Hex)</label>
+                    <label className="block text-xs font-semibold text-white/70 mb-1.5">Colour 2 · Footer</label>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={brandForm.accentColor}
-                        onChange={(e) => setBrandForm({ ...brandForm, accentColor: e.target.value })}
-                        className="h-9 w-12 rounded border-0 bg-transparent cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={brandForm.accentColor}
-                        onChange={(e) => setBrandForm({ ...brandForm, accentColor: e.target.value })}
-                        className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm font-mono text-white outline-none focus:border-[#e9c78d]"
-                      />
+                      <input type="color" value={brandForm.theme.groundColor} onChange={(e) => setThemeForm({ groundColor: e.target.value })} className="h-9 w-12 rounded border-0 bg-transparent cursor-pointer" />
+                      <input type="text" value={brandForm.theme.groundColor} onChange={(e) => setThemeForm({ groundColor: e.target.value })} className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm font-mono text-white outline-none focus:border-[#e9c78d]" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-white/70 mb-1.5">Colour 3 · Buttons</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={brandForm.theme.actionColor} onChange={(e) => setThemeForm({ actionColor: e.target.value })} className="h-9 w-12 rounded border-0 bg-transparent cursor-pointer" />
+                      <input type="text" value={brandForm.theme.actionColor} onChange={(e) => setThemeForm({ actionColor: e.target.value })} className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm font-mono text-white outline-none focus:border-[#e9c78d]" />
                     </div>
                   </div>
                 </div>
@@ -979,43 +961,6 @@ export function DashboardClient({
                     onChange={(e) => setBrandForm({ ...brandForm, tagline: e.target.value })}
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#e9c78d]"
                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-white/70 mb-1.5">Primary Color</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={brandForm.primaryColor}
-                        onChange={(e) => setBrandForm({ ...brandForm, primaryColor: e.target.value })}
-                        className="h-9 w-12 rounded border-0 bg-transparent cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={brandForm.primaryColor}
-                        onChange={(e) => setBrandForm({ ...brandForm, primaryColor: e.target.value })}
-                        className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-mono text-white outline-none"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-white/70 mb-1.5">Accent Color</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={brandForm.accentColor}
-                        onChange={(e) => setBrandForm({ ...brandForm, accentColor: e.target.value })}
-                        className="h-9 w-12 rounded border-0 bg-transparent cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={brandForm.accentColor}
-                        onChange={(e) => setBrandForm({ ...brandForm, accentColor: e.target.value })}
-                        className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-mono text-white outline-none"
-                      />
-                    </div>
-                  </div>
                 </div>
 
                 <div className="pt-2">

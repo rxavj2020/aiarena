@@ -1,21 +1,22 @@
 import { TenantShell } from "./TenantShell";
 import { TenantHome } from "./TenantHome";
+import type { StoreSettings } from "@/lib/settings";
 import { getTenantSite, type TenantSite } from "@/lib/tenant-site";
 
 /**
  * A complete website for one tenant: themed chrome + home content.
  * Used by `/store/{slug}` and by the root URL of a verified custom domain.
  */
-export async function TenantStorefront({ site, currency = "INR", cartCount = 0, supportEmail, supportPhone }: {
+export async function TenantStorefront({ site, settings, cartCount = 0, supportEmail, supportPhone }: {
   site: TenantSite;
-  currency?: string;
+  settings: StoreSettings;
   cartCount?: number;
   supportEmail?: string;
   supportPhone?: string;
 }) {
   return (
     <TenantShell site={site} cartCount={cartCount} supportEmail={supportEmail} supportPhone={supportPhone}>
-      <TenantHome site={site} currency={currency} />
+      <TenantHome site={site} settings={settings} />
     </TenantShell>
   );
 }

@@ -23,7 +23,7 @@ export default async function HomePage() {
       return (
         <TenantStorefront
           site={site}
-          currency={settings.currency}
+          settings={settings}
           cartCount={cart.reduce((a, l) => a + l.qty, 0)}
           supportEmail={settings.supportEmail}
           supportPhone={settings.supportPhone}

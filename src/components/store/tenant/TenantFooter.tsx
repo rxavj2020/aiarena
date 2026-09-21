@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { siteHref, type TenantSite } from "@/lib/tenant-site";
 
-/** Footer of one tenant website. Platform attribution is text-only and tiny. */
-export function TenantFooter({ site, supportEmail, supportPhone }: { site: TenantSite; supportEmail?: string; supportPhone?: string }) {
+/**
+ * Footer of one website — Colour 2 · GROUND, with the store's details laid out
+ * like a boutique site's footer. Platform attribution is text-only and tiny.
+ */
+export function TenantFooter({ site, supportEmail, supportPhone, address }: { site: TenantSite; supportEmail?: string; supportPhone?: string; address?: string }) {
   const { basePath: base, name, tagline } = site;
   const year = new Date().getFullYear();
 
@@ -30,6 +33,17 @@ export function TenantFooter({ site, supportEmail, supportPhone }: { site: Tenan
           <ul className="s-footer-list">
             {supportEmail ? <li><a href={`mailto:${supportEmail}`}>{supportEmail}</a></li> : null}
             {supportPhone ? <li><a href={`tel:${supportPhone.replace(/\s/g, "")}`}>{supportPhone}</a></li> : null}
+          </ul>
+        </div>
+        <div>
+          <div className="s-footer-title">Store</div>
+          <ul className="s-footer-list">
+            {address ? <li>{address}</li> : null}
+            {address ? (
+              <li>
+                <a href={`https://maps.google.com/?q=${encodeURIComponent(address)}`} target="_blank" rel="noopener noreferrer">Open in Maps</a>
+              </li>
+            ) : null}
           </ul>
         </div>
       </div>

@@ -1,25 +1,24 @@
 /**
- * Site theme layer for tenant websites.
+ * Site theme layer for tenant websites — "Role Trio".
  *
- * Two kinds of preference compose on every page of a website:
- *  - Owner-selected `TenantTheme` (preset, brand colours, font, radius, default
- *    appearance) stored on the tenant record and applied site-wide.
- *  - Visitor-selected appearance (light / dark / system) persisted in a cookie
- *    whose Path is scoped to that website so it never leaks to other sites.
+ * The owner provides three colour codes; each owns whole groups of components
+ * (flat brand colours across the UI, the way a designed brand site works):
  *
- * Palettes come in two kinds — `two` (primary + accent) and `three` (primary +
- * accent + tertiary). Three-colour themes render gradient hero surfaces,
- * gradient buttons and a tri-stripe accent bar; two-colour themes stay solid.
+ *   Colour 1 · FRAME  — announcement bar, header / nav, hero overlay start
+ *   Colour 2 · GROUND — footer, marquee, serif headings, section panels
+ *   Colour 3 · ACTION — buttons, links, badges, cart, focus rings
+ *
+ * Everything else (cream page background, cards, ink text, borders) is derived
+ * from the trio so any three hexes look like one designed system. Two layers of
+ * preference compose on every page: the owner's `TenantTheme` and the visitor's
+ * light / dark / system appearance (cookie scoped to the website).
  */
 
 export type Appearance = "light" | "dark" | "system";
-export type ThemeColorMode = "two" | "three";
 
 export type ThemePresetId =
-  // Two-colour themes
-  | "minimal" | "vivid" | "elegant" | "noir" | "organic"
-  // Three-colour themes
-  | "sunset" | "aurora" | "candy" | "bazaar";
+  | "royal-emerald" | "heritage-maroon" | "midnight-gold" | "indigo-pearl"
+  | "terracotta" | "rosewood" | "emerald-coast" | "ink-coral";
 
 export type ThemeRadius = "sharp" | "soft" | "round";
 export type ThemeFont = "sans" | "display" | "serif";
@@ -28,12 +27,12 @@ export type TenantTheme = {
   preset: ThemePresetId;
   /** Appearance shown to first-time visitors (before they pick their own). */
   appearance: Appearance;
-  /** `two` uses primary + accent; `three` adds the trending tri-colour look. */
-  colorMode: ThemeColorMode;
-  primaryColor: string;
-  accentColor: string;
-  /** Only rendered when `colorMode === "three"`. */
-  tertiaryColor: string;
+  /** Colour 1 · FRAME — header, announcement bar, hero overlay start. */
+  frameColor: string;
+  /** Colour 2 · GROUND — footer, headings, marquee, section panels. */
+  groundColor: string;
+  /** Colour 3 · ACTION — buttons, links, badges, cart, focus. */
+  actionColor: string;
   radius: ThemeRadius;
   font: ThemeFont;
 };
@@ -42,157 +41,152 @@ export type ThemePreset = {
   id: ThemePresetId;
   label: string;
   blurb: string;
-  colorMode: ThemeColorMode;
-  primaryColor: string;
-  accentColor: string;
-  tertiaryColor: string;
+  frameColor: string;
+  groundColor: string;
+  actionColor: string;
   radius: ThemeRadius;
   font: ThemeFont;
   appearance: Appearance;
 };
 
+/** Role order used everywhere in the admin UI and palette stripes. */
+export const ROLE_ORDER = ["frame", "ground", "action"] as const;
+export type ThemeRole = (typeof ROLE_ORDER)[number];
+
+export const ROLE_LABELS: Record<ThemeRole, { swatch: string; title: string; usedBy: string }> = {
+  frame: { swatch: "Colour 1", title: "Header & frame", usedBy: "Announcement bar, header, navigation, hero overlay" },
+  ground: { swatch: "Colour 2", title: "Footer & sections", usedBy: "Footer, headings, marquee, story & visit panels" },
+  action: { swatch: "Colour 3", title: "Buttons & links", usedBy: "Buttons, links, badges, cart, focus rings" },
+};
+
 export const THEME_PRESETS: ThemePreset[] = [
-  // ── Two-colour themes ──────────────────────────────────────────────
   {
-    id: "minimal",
-    label: "Minimal",
-    blurb: "Airy neutrals, quiet type — lets the products speak.",
-    colorMode: "two",
-    primaryColor: "#151515",
-    accentColor: "#c98b5b",
-    tertiaryColor: "#7c8a74",
-    radius: "soft",
-    font: "sans",
-    appearance: "light",
-  },
-  {
-    id: "vivid",
-    label: "Vivid",
-    blurb: "High-energy colour blocks made for drops and deals.",
-    colorMode: "two",
-    primaryColor: "#2874f0",
-    accentColor: "#fb641b",
-    tertiaryColor: "#7c3aed",
-    radius: "round",
-    font: "display",
-    appearance: "light",
-  },
-  {
-    id: "elegant",
-    label: "Elegant",
-    blurb: "Editorial serif headlines with refined gold detailing.",
-    colorMode: "two",
-    primaryColor: "#3b2f2f",
-    accentColor: "#b08d57",
-    tertiaryColor: "#b76e79",
+    id: "royal-emerald",
+    label: "Royal Emerald",
+    blurb: "Deep green frame, warm dark ground, gold actions — boutique jewellery.",
+    frameColor: "#0c3b2e",
+    groundColor: "#241c13",
+    actionColor: "#c9a227",
     radius: "soft",
     font: "serif",
     appearance: "light",
   },
   {
-    id: "noir",
-    label: "Noir",
-    blurb: "Dark canvas, sharp geometry — premium and dramatic.",
-    colorMode: "two",
-    primaryColor: "#e5e2da",
-    accentColor: "#c9a227",
-    tertiaryColor: "#8aa1b9",
+    id: "heritage-maroon",
+    label: "Heritage Maroon",
+    blurb: "Wedding-season maroon with antique gold detailing.",
+    frameColor: "#5b1a22",
+    groundColor: "#24160f",
+    actionColor: "#c6a15b",
+    radius: "soft",
+    font: "serif",
+    appearance: "light",
+  },
+  {
+    id: "midnight-gold",
+    label: "Midnight Gold",
+    blurb: "Near-black frame and ground with pure gold actions.",
+    frameColor: "#14120e",
+    groundColor: "#0e0d0b",
+    actionColor: "#c9a227",
     radius: "sharp",
     font: "display",
     appearance: "dark",
   },
   {
-    id: "organic",
-    label: "Organic",
-    blurb: "Warm earth tones and rounded shapes, calm and handmade.",
-    colorMode: "two",
-    primaryColor: "#3f6c51",
-    accentColor: "#d9a451",
-    tertiaryColor: "#c07a4a",
+    id: "indigo-pearl",
+    label: "Indigo Pearl",
+    blurb: "Regal indigo frame, ink ground, pearl-gold actions.",
+    frameColor: "#232f5c",
+    groundColor: "#171a24",
+    actionColor: "#d4af37",
+    radius: "soft",
+    font: "serif",
+    appearance: "light",
+  },
+  {
+    id: "terracotta",
+    label: "Terracotta Studio",
+    blurb: "Clay-red frame with warm umber ground — artisanal and calm.",
+    frameColor: "#8c3b1b",
+    groundColor: "#2a1f16",
+    actionColor: "#e3b341",
     radius: "round",
     font: "serif",
     appearance: "light",
   },
-  // ── Three-colour themes (trending trios) ───────────────────────────
   {
-    id: "sunset",
-    label: "Sunset Glow",
-    blurb: "Orange melting into pink and violet — the trending dusk gradient.",
-    colorMode: "three",
-    primaryColor: "#f97316",
-    accentColor: "#ec4899",
-    tertiaryColor: "#8b5cf6",
-    radius: "round",
-    font: "display",
-    appearance: "light",
-  },
-  {
-    id: "aurora",
-    label: "Aurora",
-    blurb: "Teal, blue and violet flowing like northern lights.",
-    colorMode: "three",
-    primaryColor: "#2dd4bf",
-    accentColor: "#3b82f6",
-    tertiaryColor: "#a855f7",
-    radius: "soft",
-    font: "display",
-    appearance: "system",
-  },
-  {
-    id: "candy",
-    label: "Candy Pop",
-    blurb: "Hot pink, sunny amber and sky blue — playful and loud.",
-    colorMode: "three",
-    primaryColor: "#ec4899",
-    accentColor: "#f59e0b",
-    tertiaryColor: "#38bdf8",
-    radius: "round",
-    font: "display",
-    appearance: "light",
-  },
-  {
-    id: "bazaar",
-    label: "Bazaar",
-    blurb: "Magenta, gold and teal — festive market energy.",
-    colorMode: "three",
-    primaryColor: "#db2777",
-    accentColor: "#f59e0b",
-    tertiaryColor: "#0d9488",
+    id: "rosewood",
+    label: "Rosewood",
+    blurb: "Plum-rose frame, cocoa ground, champagne gold actions.",
+    frameColor: "#4a1d33",
+    groundColor: "#241a14",
+    actionColor: "#c9a227",
     radius: "soft",
     font: "serif",
+    appearance: "light",
+  },
+  {
+    id: "emerald-coast",
+    label: "Emerald Coast",
+    blurb: "Fresh teal frame, slate ground, honey actions — modern retail.",
+    frameColor: "#0e5c4a",
+    groundColor: "#1b2420",
+    actionColor: "#e0b24c",
+    radius: "round",
+    font: "display",
+    appearance: "light",
+  },
+  {
+    id: "ink-coral",
+    label: "Ink & Coral",
+    blurb: "Ink-blue frame, navy ground, coral actions — sharp and current.",
+    frameColor: "#1f2a44",
+    groundColor: "#16202e",
+    actionColor: "#f97316",
+    radius: "sharp",
+    font: "display",
     appearance: "light",
   },
 ];
 
 export const defaultTenantTheme: TenantTheme = {
-  preset: "minimal",
+  preset: "royal-emerald",
   appearance: "light",
-  colorMode: "two",
-  primaryColor: "#151515",
-  accentColor: "#c98b5b",
-  tertiaryColor: "#7c8a74",
+  frameColor: "#0c3b2e",
+  groundColor: "#241c13",
+  actionColor: "#c9a227",
   radius: "soft",
-  font: "sans",
+  font: "serif",
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
 const isOneOf = <T extends string>(value: unknown, options: readonly T[]): value is T =>
   typeof value === "string" && (options as readonly string[]).includes(value);
+const hexOr = (value: unknown, fallback: string) => (typeof value === "string" && HEX.test(value) ? value : fallback);
 
 export function getPreset(id: string | null | undefined): ThemePreset {
   return THEME_PRESETS.find((p) => p.id === id) ?? THEME_PRESETS[0];
 }
 
-/** Merge any stored/partial theme onto the defaults with validation. */
-export function resolveTheme(input?: Partial<TenantTheme> | null): TenantTheme {
-  const preset = getPreset(input?.preset);
+/**
+ * Merge any stored/partial theme onto the preset defaults with validation.
+ * Understands the legacy gradient-era fields (`primaryColor`, `accentColor`,
+ * `tertiaryColor`) and maps them onto the role trio.
+ */
+export function resolveTheme(input?: (Partial<TenantTheme> & Record<string, unknown>) | null): TenantTheme {
+  const preset = getPreset(input?.preset as string | undefined);
+  const legacy = input as Record<string, unknown> | undefined;
+  // Legacy mapping: primary was buttons, accent was highlights, tertiary the third.
+  const frame = hexOr(input?.frameColor, hexOr(legacy?.accentColor, hexOr(legacy?.primaryColor, preset.frameColor)));
+  const ground = hexOr(input?.groundColor, hexOr(legacy?.tertiaryColor, preset.groundColor));
+  const action = hexOr(input?.actionColor, hexOr(legacy?.primaryColor, preset.actionColor));
   return {
     preset: preset.id,
     appearance: isOneOf(input?.appearance, ["light", "dark", "system"] as const) ? input!.appearance : preset.appearance,
-    colorMode: isOneOf(input?.colorMode, ["two", "three"] as const) ? input!.colorMode : preset.colorMode,
-    primaryColor: input?.primaryColor && HEX.test(input.primaryColor) ? input.primaryColor : preset.primaryColor,
-    accentColor: input?.accentColor && HEX.test(input.accentColor) ? input.accentColor : preset.accentColor,
-    tertiaryColor: input?.tertiaryColor && HEX.test(input.tertiaryColor) ? input.tertiaryColor : preset.tertiaryColor,
+    frameColor: frame,
+    groundColor: ground,
+    actionColor: action,
     radius: isOneOf(input?.radius, ["sharp", "soft", "round"] as const) ? input!.radius : preset.radius,
     font: isOneOf(input?.font, ["sans", "display", "serif"] as const) ? input!.font : preset.font,
   };
@@ -225,30 +219,26 @@ export function readableInk(hex: string): string {
 
 /** CSS custom properties applied inline on the website's root wrapper. */
 export function themeVars(theme: TenantTheme): Record<string, string> {
-  const { primaryColor: p, accentColor: a, tertiaryColor: t, colorMode } = theme;
-  const trio = colorMode === "three";
+  const { frameColor: f, groundColor: g, actionColor: a } = theme;
   return {
-    "--site-primary": p,
-    "--site-primary-ink": readableInk(p),
-    "--site-accent": a,
-    "--site-accent-ink": readableInk(a),
-    "--site-third": t,
-    "--site-third-ink": readableInk(t),
+    // The three provided colours, by role.
+    "--site-frame": f,
+    "--site-frame-ink": readableInk(f),
+    "--site-ground": g,
+    "--site-ground-ink": readableInk(g),
+    "--site-action": a,
+    "--site-action-ink": readableInk(a),
+    // Derived neutrals — what makes any three hexes look designed.
+    "--site-heading": g,
+    "--site-hero": `linear-gradient(120deg, ${f} 0%, ${g} 92%)`,
+    "--site-wash": `color-mix(in srgb, ${g} 6%, #ffffff)`,
+    "--site-wash-strong": `color-mix(in srgb, ${g} 12%, #ffffff)`,
+    "--site-tint-action": `color-mix(in srgb, ${a} 14%, transparent)`,
+    // Palette stripe: the three roles in order — the theme's signature.
+    "--site-bar": `linear-gradient(90deg, ${f} 0 33.3%, ${g} 33.3% 66.6%, ${a} 66.6% 100%)`,
     "--site-radius": RADIUS_VALUES[theme.radius],
     "--site-font": FONT_STACKS[theme.font],
     "--site-font-display": DISPLAY_STACKS[theme.font],
-    // Hero / large surfaces: 2-stop for duo themes, flowing trio gradient for three.
-    "--site-gradient": trio
-      ? `linear-gradient(115deg, ${p} 0%, ${a} 55%, ${t} 130%)`
-      : `linear-gradient(115deg, ${p} 0%, color-mix(in srgb, ${p} 55%, #1a1a18) 58%, ${a} 150%)`,
-    // Small solid-button surface.
-    "--site-btn-gradient": trio
-      ? `linear-gradient(95deg, ${p} 0%, ${a} 65%, ${t} 150%)`
-      : p,
-    // Accent stripe: colour blocks — 2 or 3 depending on the palette kind.
-    "--site-bar": trio
-      ? `linear-gradient(90deg, ${p} 0 33.3%, ${a} 33.3% 66.6%, ${t} 66.6% 100%)`
-      : `linear-gradient(90deg, ${p} 0 50%, ${a} 50% 100%)`,
   };
 }
 

@@ -22,12 +22,16 @@ export async function TenantShell({
   cartCount = 0,
   supportEmail,
   supportPhone,
+  address,
+  announcement,
 }: {
   site: TenantSite;
   children: React.ReactNode;
   cartCount?: number;
   supportEmail?: string;
   supportPhone?: string;
+  address?: string;
+  announcement?: string;
 }) {
   const appearance = await readSiteAppearance(site);
   const resolved = appearance === "system" ? "light" : appearance;
@@ -38,14 +42,13 @@ export async function TenantShell({
       data-appearance-choice={appearance}
       data-appearance={resolved}
       data-preset={site.theme.preset}
-      data-palette={site.theme.colorMode}
       style={themeVars(site.theme) as React.CSSProperties}
     >
       {/* Resolve "system" before first paint and keep it in sync with the OS. */}
       <script dangerouslySetInnerHTML={{ __html: `(()=>{var r=document.querySelector(".tenant-site");if(!r)return;var sync=function(){if(r.getAttribute("data-appearance-choice")==="system"){r.setAttribute("data-appearance",window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");}};sync();window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",sync);})();` }} />
-      <TenantHeader site={site} cartCount={cartCount} appearance={appearance} />
+      <TenantHeader site={site} cartCount={cartCount} appearance={appearance} announcement={announcement} />
       <main className="s-main">{children}</main>
-      <TenantFooter site={site} supportEmail={supportEmail} supportPhone={supportPhone} />
+      <TenantFooter site={site} supportEmail={supportEmail} supportPhone={supportPhone} address={address} />
     </div>
   );
 }

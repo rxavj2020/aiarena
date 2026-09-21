@@ -19,7 +19,14 @@ export default async function TenantSiteLayout({ children, params }: { children:
   const cartCount = cart.reduce((a, l) => a + l.qty, 0);
 
   return (
-    <TenantShell site={site} cartCount={cartCount} supportEmail={settings.supportEmail} supportPhone={settings.supportPhone}>
+    <TenantShell
+      site={site}
+      cartCount={cartCount}
+      supportEmail={settings.supportEmail}
+      supportPhone={settings.supportPhone}
+      address={settings.address}
+      announcement={settings.announcementEnabled ? settings.announcement : undefined}
+    >
       {children}
     </TenantShell>
   );
