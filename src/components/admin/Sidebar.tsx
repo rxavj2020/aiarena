@@ -38,16 +38,16 @@ const nav: NavEntry[] = [
   { section: "Website" },
   { href: "/admin/content", label: "Content", icon: Palette },
   { href: "/admin/pages", label: "Pages", icon: FileText },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+  { href: "/admin/settings", label: "Settings", icon: Settings, mobile: true },
   { section: "Integrations" },
-  { href: "/admin/plugins", label: "Plugins", icon: Plug },
+  { href: "/admin/plugins", label: "Plugins", icon: Plug, mobile: true },
   { href: "/admin/mail-log", label: "Mail log", icon: Mail },
 ];
 
 export function Sidebar({ storeName, publicHref, pendingOrders, pendingReviews, tenantWorkspace = false }: { storeName: string; publicHref: string; pendingOrders: number; pendingReviews: number; tenantWorkspace?: boolean }) {
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const visibleNav = tenantWorkspace ? nav.filter((item) => "href" in item && ["/admin", "/admin/products"].includes(item.href)) : nav;
+  const visibleNav = tenantWorkspace ? nav.filter((item) => "href" in item && ["/admin", "/admin/orders", "/admin/products", "/admin/settings", "/admin/plugins"].includes(item.href)) : nav;
 
   const NavContent = () => (
     <>
@@ -92,9 +92,9 @@ export function Sidebar({ storeName, publicHref, pendingOrders, pendingReviews, 
       </nav>
 
       <div className="p-3 border-t border-white/10 space-y-0.5 text-sm hidden lg:block">
-        <Link href="/platform" className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 hover:bg-white/5 hover:text-white text-gray-400">
-          <LayoutDashboard className="h-4 w-4" />
-          Workspace setup
+        <Link href={tenantWorkspace ? "/admin/settings" : "/platform"} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 hover:bg-white/5 hover:text-white text-gray-400">
+          <Settings className="h-4 w-4" />
+          Store settings
         </Link>
         <a href={publicHref} target="_blank" className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 hover:bg-white/5 hover:text-white text-gray-400">
           <ExternalLink className="h-4 w-4" />

@@ -67,16 +67,24 @@ export async function getCurrentUserWorkspaces() {
     const legacyAdminEmail = (process.env.ADMIN_EMAIL ?? "admin@example.com").toLowerCase();
     if (session.email.toLowerCase() === legacyAdminEmail) ensureDefaultMembership(session.id);
   }
-  return { session, workspaces: listWorkspacesForUser(session.id) };
+  // Aurelia is intentionally a single-store product for each subscriber. Keep
+  // the oldest membership as the primary store even if an older account has
+  // legacy duplicate memberships; never expose a workspace switcher.
+  return { session, workspaces: listWorkspacesForUser(session.id).slice(0, 1) };
 }
 
 export async function requireWorkspaceAccess(tenantId: string) {
   const session = await getSession();
   if (!session || session.role !== "admin") throw new Error("UNAUTHORIZED");
   let member = db.select().from(schema.tenantMembers).where(and(eq(schema.tenantMembers.tenantId, tenantId), eq(schema.tenantMembers.userId, session.id))).get();
-  // Existing admin accounts predate the workspace model. Attach them to the legacy workspace once.
+  // Existing admin accounts predate the store model. Attach them to the legacy
+  // demo only for that explicit compatibility path.
   if (!member && tenantId === DEFAULT_TENANT_ID) member = ensureDefaultMembership(session.id);
-  if (!member) throw new Error("WORKSPACE_ACCESS_DENIED");
+  const memberships = listWorkspacesForUser(session.id);
+  const primary = memberships[0];
+  const legacyAdminEmail = (process.env.ADMIN_EMAIL ?? "admin@example.com").toLowerCase();
+  const explicitLegacyAccess = tenantId === DEFAULT_TENANT_ID && session.email.toLowerCase() === legacyAdminEmail;
+  if (!member || (!explicitLegacyAccess && primary?.tenant.id !== tenantId)) throw new Error("WORKSPACE_ACCESS_DENIED");
   const tenant = getTenantById(tenantId);
   if (!tenant) throw new Error("WORKSPACE_NOT_FOUND");
   return { session, tenant, member };

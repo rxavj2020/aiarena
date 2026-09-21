@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db, schema } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { ensureMembership, getTenantById, getTenantBySlug, requireWorkspaceAccess, WORKSPACE_COOKIE } from "@/lib/platform";
+import { ensureMembership, getCurrentUserWorkspaces, getTenantById, getTenantBySlug, requireWorkspaceAccess, WORKSPACE_COOKIE } from "@/lib/platform";
 import { id, slugify } from "@/lib/utils";
 import { encryptSecret } from "@/lib/secrets";
 import { testFirestore } from "@/lib/plugins/firestore";
@@ -58,12 +58,16 @@ export async function createWorkspace(input: { name: string; slug: string; plan:
     if (existing) return { ok: false, error: "That public URL is already taken" };
     const session = await getSession();
     if (!session) throw new Error("UNAUTHORIZED");
+    const account = await getCurrentUserWorkspaces();
+    if (account.workspaces.length) {
+      return { ok: false, error: "Your store already exists. Open it from the store control panel instead of creating another store." };
+    }
     const tenantId = id("tenant_");
     db.insert(schema.tenants).values({ id: tenantId, slug: parsed.data.slug, name: parsed.data.name, tagline: parsed.data.tagline, plan: parsed.data.plan, status: "setup" }).run();
     ensureMembership(session.id, tenantId, "owner");
     db.insert(schema.storeDomains).values({ id: id("dom_"), tenantId, hostname: `${parsed.data.slug}.aurelia.app`, kind: "platform", status: "verified", verificationToken: "platform-managed" }).run();
     revalidatePath("/platform");
-    return { ok: true, message: "Workspace created", slug: parsed.data.slug, tenantId };
+    return { ok: true, message: "Store created", slug: parsed.data.slug, tenantId };
   });
 }
 
@@ -107,7 +111,7 @@ export async function connectWorkspaceFirestore(tenantId: string, input: Firesto
     else db.insert(schema.tenantIntegrations).values({ id: id("int_"), ...row }).run();
     revalidatePath(`/platform/stores/${getTenantById(tenantId)?.slug ?? ""}`);
     revalidatePath("/platform");
-    return { ok: true, message: "Firestore connected — your workspace data is ready" };
+    return { ok: true, message: "Firestore connected — your store data is ready" };
   });
 }
 

@@ -51,6 +51,7 @@ export const tenantIntegrations = sqliteTable(
     lastTestAt: text("last_test_at"),
     lastTestOk: integer("last_test_ok", { mode: "boolean" }),
     lastTestMessage: text("last_test_message"),
+    lastTestConfigHash: text("last_test_config_hash"),
   },
   (t) => [uniqueIndex("tenant_integrations_unique_idx").on(t.tenantId, t.provider), index("tenant_integrations_tenant_idx").on(t.tenantId)]
 );

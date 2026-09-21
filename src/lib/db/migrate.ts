@@ -25,7 +25,7 @@ CREATE INDEX IF NOT EXISTS tenant_members_user_idx ON tenant_members(user_id);
 CREATE TABLE IF NOT EXISTS tenant_integrations (
   id TEXT PRIMARY KEY, tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   provider TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 0, config TEXT NOT NULL DEFAULT '{}',
-  last_test_at TEXT, last_test_ok INTEGER, last_test_message TEXT
+  last_test_at TEXT, last_test_ok INTEGER, last_test_message TEXT, last_test_config_hash TEXT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS tenant_integrations_unique_idx ON tenant_integrations(tenant_id, provider);
 CREATE INDEX IF NOT EXISTS tenant_integrations_tenant_idx ON tenant_integrations(tenant_id);
@@ -98,4 +98,6 @@ CREATE TABLE IF NOT EXISTS mail_log (
   }
   const pluginCols = (sqlite.prepare("PRAGMA table_info(plugins)").all() as { name: string }[]).map((c) => c.name);
   if (!pluginCols.includes("last_test_config_hash")) sqlite.exec("ALTER TABLE plugins ADD COLUMN last_test_config_hash TEXT");
+  const tenantIntegrationCols = (sqlite.prepare("PRAGMA table_info(tenant_integrations)").all() as { name: string }[]).map((c) => c.name);
+  if (!tenantIntegrationCols.includes("last_test_config_hash")) sqlite.exec("ALTER TABLE tenant_integrations ADD COLUMN last_test_config_hash TEXT");
 }

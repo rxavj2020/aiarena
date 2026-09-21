@@ -11,5 +11,5 @@ export default async function WorkspacePage({ params, searchParams }: { params: 
   const tenant = getTenantBySlug(slug);
   if (!tenant) notFound();
   await requireWorkspaceAccess(tenant.id);
-  return <div>{query.oauth_error ? <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700">Google Firestore connection could not be completed: {query.oauth_error}</div> : null}{query.oauth === "connected" ? <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm text-emerald-700">Google Firestore OAuth connected and tested for this workspace.</div> : null}<WorkspaceSetup tenant={tenant} setup={workspaceSetup(tenant.id)} oauthConfigured={isGoogleOAuthConfigured()} /></div>;
+  return <div>{query.oauth_error ? <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700">Google Firestore connection could not be completed: {query.oauth_error}</div> : null}{query.oauth === "connected" ? <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm text-emerald-700">Google Firestore OAuth connected and tested for this store.</div> : null}<WorkspaceSetup tenant={tenant} setup={workspaceSetup(tenant.id)} oauthConfigured={isGoogleOAuthConfigured()} /></div>;
 }

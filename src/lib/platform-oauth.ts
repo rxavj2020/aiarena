@@ -28,14 +28,14 @@ function parseState(value: string): State | null {
   if (!valuePart || !sig || sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
   try {
     const state = JSON.parse(decode(valuePart)) as State;
-    return state.tenantId && state.userId && state.projectId && state.returnTo.startsWith("/platform/stores/") && Date.now() - state.issuedAt < TTL * 1000 ? state : null;
+    return state.tenantId && state.userId && state.projectId && (state.returnTo.startsWith("/platform/stores/") || state.returnTo === "/admin/settings") && Date.now() - state.issuedAt < TTL * 1000 ? state : null;
   } catch { return null; }
 }
 function errorPath(returnTo: string, message: string) { return `${returnTo}?oauth_error=${encodeURIComponent(message.slice(0, 180))}`; }
 
-export async function startWorkspaceFirestoreOAuth(tenantId: string, _returnTo: string, formData?: FormData) {
+export async function startWorkspaceFirestoreOAuth(tenantId: string, returnTo: string, formData?: FormData) {
   const { session, tenant } = await requireWorkspaceAccess(tenantId);
-  const safeReturnTo = `/platform/stores/${tenant.slug}`;
+  const safeReturnTo = returnTo === "/admin/settings" ? "/admin/settings" : `/platform/stores/${tenant.slug}`;
   if (!isGoogleOAuthConfigured()) redirect(errorPath(safeReturnTo, "Google OAuth is not configured on this Aurelia deployment."));
   const projectId = String(formData?.get("projectId") ?? "").trim();
   if (!projectId) redirect(errorPath(safeReturnTo, "Enter the Firebase project ID before connecting Google Cloud."));

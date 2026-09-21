@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { getCurrentUserWorkspaces, getCurrentWorkspace } from "@/lib/platform";
+import { getCurrentWorkspace } from "@/lib/platform";
 import { PlatformShell } from "@/components/platform/PlatformShell";
 import { PlatformLanding } from "@/components/platform/PlatformLanding";
 
@@ -17,6 +17,13 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     redirect(`/platform/login?next=${encodeURIComponent(path || "/platform")}`);
   }
   if (path.startsWith("/platform/login") || path.startsWith("/platform/signup")) redirect("/platform");
-  const [{ workspaces }, current] = await Promise.all([getCurrentUserWorkspaces(), getCurrentWorkspace()]);
-  return <PlatformShell workspaces={workspaces} current={current.tenant}>{children}</PlatformShell>;
+  const current = await getCurrentWorkspace();
+  // Once a store is live, the subscriber's natural landing page is the
+  // private operational console. Keep /platform for first-store onboarding
+  // and setup, not as a place to choose between stores.
+  if (path.startsWith("/platform/new") && current.tenant) {
+    redirect(current.tenant.status === "active" ? "/admin" : `/platform/stores/${current.tenant.slug}`);
+  }
+  if ((path === "/platform" || path === "/platform/") && current.tenant?.status === "active") redirect("/admin");
+  return <PlatformShell current={current.tenant}>{children}</PlatformShell>;
 }

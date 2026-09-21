@@ -1,6 +1,6 @@
 # Aurelia Commerce — full-stack e-commerce platform
 
-A three-layer SaaS commerce platform with a marketing site, subscriber workspaces and tenant storefronts, built with Next.js 15 (App Router), TypeScript, Tailwind v4, Drizzle ORM and SQLite. Firestore-backed tenant catalogue data is isolated from the seeded Aurelia demo; plug in payments, email, storage and CDN from the admin **Plugins** page when you're ready.
+A three-layer SaaS commerce platform with a marketing site, subscriber stores and tenant storefronts, built with Next.js 15 (App Router), TypeScript, Tailwind v4, Drizzle ORM and SQLite. Firestore-backed tenant catalogue data is isolated from the seeded Aurelia demo; connect payments, email, storage and CDN from the store admin **Plugins** page when you're ready.
 
 ## Quick start
 
@@ -13,11 +13,11 @@ npm run dev         # http://localhost:3000
 | Role | URL | Login |
 |---|---|---|
 | SaaS marketing website | `/` | — |
-| Authenticated Studio control plane | `/platform` | — |
-| Workspace owner signup | `/register` or `/platform/signup` | — |
-| Workspace owner login | `/login` or `/platform/login` | — |
+| Authenticated store control plane | `/platform` | — |
+| Store owner signup | `/register` or `/platform/signup` | — |
+| Store owner login | `/login` or `/platform/login` | — |
 | Legacy Aurelia storefront | `/store/aurelia` (`/site/aurelia` alias) | — |
-| **Selected workspace admin** | `/admin` | admin@example.com / admin1234 |
+| **Store admin** | `/admin` | admin@example.com / admin1234 for the legacy demo |
 
 Change admin credentials via `ADMIN_EMAIL` / `ADMIN_PASSWORD` before the first seed, or promote any user from **Admin → Customers**. Set a strong `AUTH_SECRET` in `.env.local` (see `.env.example`).
 
@@ -57,19 +57,19 @@ Each plugin has a guided setup, a *Test connection* button and an on/off switch.
 Only one payment gateway can be active at a time (enabling one disables the other).
 
 ### OAuth-enabled connections
-Gmail SMTP and Google Firestore can use Google OAuth2 instead of manually entering a Gmail app password or Firestore service-account key. Configure a Google OAuth **Web application** in Google Cloud, add the callback URLs shown in the UI (`/api/oauth/google/callback` for admin plugins and `/api/oauth/google/firestore/callback` for subscriber workspace setup), and set `GOOGLE_CLIENT_ID` plus `GOOGLE_CLIENT_SECRET` on the Aurelia deployment. The admin still enters the SMTP host or Firestore project ID so the connection is unambiguous. OAuth refresh tokens and all API secrets are encrypted at rest; the browser only receives masked values.
+Gmail SMTP and Google Firestore can use Google OAuth2 instead of manually entering a Gmail app password or Firestore service-account key. Configure a Google OAuth **Web application** in Google Cloud, add the callback URLs shown in the UI (`/api/oauth/google/callback` for admin plugins and `/api/oauth/google/firestore/callback` for subscriber store setup), and set `GOOGLE_CLIENT_ID` plus `GOOGLE_CLIENT_SECRET` on the Aurelia deployment. The admin still enters the SMTP host or Firestore project ID so the connection is unambiguous. OAuth refresh tokens and all API secrets are encrypted at rest; the browser only receives masked values.
 
 Razorpay, Cashfree, Cloudflare, R2 and Shiprocket use their provider-issued API credentials or provider login flows because those are the supported server integration methods. The plugin page provides a help icon beside every field, a step-by-step guide, webhook URLs where relevant, connection testing and a clear enablement check.
 
 ## Project layout
 ```
-src/app/platform     SaaS control plane      src/lib/platform    tenants, workspaces, domains
+src/app/platform     SaaS control plane      src/lib/platform    tenants, single-store access, domains
 src/app/(store)      legacy store routes     src/lib/db          schema + auto-migrations (SQLite)
 src/app/store/[slug] canonical tenant site   src/lib/plugins     registry, mail, payments, storage
 src/app/site/[slug]  compatibility alias      src/actions         server actions (cart, checkout, admin, platform)
-src/app/admin        selected workspace admin
+src/app/admin        subscriber store admin (legacy demo remains compatible)
 src/app/api          webhooks, uploads, CSV  src/components      platform / store / admin / ui
-scripts/seed.ts      demo data (legacy Aurelia workspace)
+scripts/seed.ts      demo data (legacy Aurelia store)
 ```
 
 ## Scripts
@@ -77,25 +77,25 @@ scripts/seed.ts      demo data (legacy Aurelia workspace)
 
 See **DEPLOY.md** for hosting behind Cloudflare.
 
-## SaaS workspace model (new)
+## SaaS single-store model
 
-Aurelia now has a three-layer foundation for turning the single-store demo into a multi-tenant commerce platform:
+Aurelia has three deliberately separate layers:
 
 | Layer | Route | Responsibility |
 |---|---|---|
-| **Aurelia Studio** | `/` and `/platform` | SaaS marketing, subscriber onboarding, workspaces, plans, Firestore connection, brand and domain setup |
-| **Store admin** | `/admin` | Private products and operations for the selected subscriber workspace |
-| **Public store** | `/store/{workspace-slug}` | The customer-facing branded storefront; `/site/{workspace-slug}` remains a compatibility alias and verified custom domains render the same tenant |
+| **Aurelia platform** | `/` and `/platform` | SaaS marketing, subscriber signup/login, one-store onboarding, plans, Firestore connection, brand and domain setup |
+| **Store admin** | `/admin` | One subscriber's private dashboard for products, orders, settings and plugins |
+| **Public store** | `/store/{store-slug}` | The customer-facing branded storefront; `/site/{store-slug}` remains a compatibility alias and verified custom domains render the same tenant |
+
+Each subscriber account gets one store and one public website. The platform does not expose workspace lists, switching controls or repeat-store creation to normal subscribers. Existing legacy memberships are resolved to their oldest primary store for compatibility, while the seeded Aurelia demo remains available explicitly at `/store/aurelia`.
 
 ### First-time subscriber flow
 
 1. Create an owner account at `/platform/signup`.
-2. Create a workspace and choose a plan.
-3. Connect the workspace's Firebase service account. The connection is tested with a Firestore read/write request before launch.
-4. Configure the logo, brand colours and tagline.
+2. Name your one store and choose a public URL.
+3. Connect the store's Firebase service account or Google OAuth connection. The connection is tested with a Firestore read/write request before launch.
+4. Configure the logo, brand colours and tagline from **Settings**.
 5. Add a custom domain. Aurelia shows the DNS record and keeps the domain pending until it is verified.
-6. Launch the public site and use the workspace's admin console.
+6. Launch the public site and use `/admin` for products, orders, settings and provider integrations.
 
-Workspace Firestore credentials are encrypted before they are written to `tenant_integrations` and are never returned to the browser. New workspaces start with an empty catalogue; no demo products, customers or orders are copied into them. The subscriber product builder writes to a collection prefix that always includes the workspace slug, even when two stores use the same Firebase project.
-
-The existing seeded Aurelia workspace remains available at the explicit `/store/aurelia` route and `/site/aurelia` compatibility alias. The SaaS landing page at `/` never renders that demo. For safety, a newly created workspace never displays the legacy Aurelia records. Its tenant-safe admin starts with a Firestore-backed product builder; orders, customers, content and the remaining plugins can be added to the same tenant repository without changing the public/store boundary.
+Store Firestore credentials and provider secrets are encrypted before they are written to `tenant_integrations` and are never returned to the browser. New subscriber stores start with an empty catalogue; no legacy demo products, customers or orders are copied into them. The product and order views read only the store's namespaced Firestore collection, even when two stores use the same Firebase project.

@@ -57,6 +57,46 @@ export async function listTenantProducts(tenantId: string, opts?: { includeDraft
 
 export type TenantProductInput = Omit<TenantProduct, "id" | "createdAt" | "updatedAt"> & { id?: string; createdAt?: string };
 
+export type TenantOrder = {
+  id: string;
+  orderNumber: string;
+  email: string;
+  phone: string;
+  status: string;
+  paymentStatus: string;
+  total: number;
+  itemCount: number;
+  createdAt: string;
+  shippingAddress: { name?: string; city?: string; state?: string } | null;
+};
+
+/** Orders are read from the same tenant-namespaced Firestore boundary as products. */
+export async function listTenantOrders(tenantId: string): Promise<TenantOrder[]> {
+  const config = getConfig(tenantId);
+  if (!config) return [];
+  const docs = await listFirestoreDocuments(config, "orders");
+  return docs
+    .map((doc) => {
+      const address = doc.shippingAddress && typeof doc.shippingAddress === "object" ? doc.shippingAddress as Record<string, unknown> : null;
+      const items = Array.isArray(doc.items) ? doc.items : Array.isArray(doc.orderItems) ? doc.orderItems : [];
+      const rawId = String(doc.id ?? doc.orderId ?? "");
+      return {
+        id: rawId,
+        orderNumber: String(doc.orderNumber ?? rawId),
+        email: String(doc.email ?? ""),
+        phone: String(doc.phone ?? ""),
+        status: String(doc.status ?? "pending"),
+        paymentStatus: String(doc.paymentStatus ?? "unpaid"),
+        total: Number(doc.total ?? 0),
+        itemCount: Number(doc.itemCount ?? items.length),
+        createdAt: String(doc.createdAt ?? ""),
+        shippingAddress: address ? { name: String(address.name ?? ""), city: String(address.city ?? ""), state: String(address.state ?? "") } : null,
+      } satisfies TenantOrder;
+    })
+    .filter((order) => order.id || order.orderNumber)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
 export async function saveTenantProduct(tenantId: string, input: TenantProductInput) {
   const config = getConfig(tenantId);
   if (!config) throw new Error("Connect and test Firestore before managing products");
